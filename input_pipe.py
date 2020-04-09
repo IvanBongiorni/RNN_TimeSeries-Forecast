@@ -20,7 +20,7 @@ from dataprep_tools import *
 def load_dataframe(path_to_data):
 
     df = pd.read_csv(path_to_data + 'train_2.csv')
-        
+
     # drop rows that are all NaN's
     df.dropna(axis = 'rows', how = 'all', inplace = True)
     return df
@@ -30,7 +30,7 @@ def get_time_schema():
     """ Returns vectors with patterns for time-related variables (year/week days)
     in [0,1] range, to be repeated on all trends. """
     daterange = pd.date_range(df.columns[1], df.columns[-1], freq='D').to_series()
-    
+
     weekdays = daterange.dt.dayofweek
     weekdays = weekdays.values / weekdays.max()
     yeardays = daterange.dt.dayofyear
@@ -61,7 +61,7 @@ def attach_page_data(df):
 def get_train_and_target_data(df, len_input, len_test):
     languages = ['en', 'ja', 'de', 'fr', 'zh', 'ru', 'es', 'na']
     X_final = []
-    
+
     for language in languages:
         print('Preprocessing of language group: {}'.format(language))
         language_pick = 'language_{}'.format(language)
@@ -76,11 +76,11 @@ def get_train_and_target_data(df, len_input, len_test):
         X_final.append(sdf)
 
     X_final = np.concatenate(X_final, axis = 0)
-    
+
     X_final = X_final[ : , :-len_test , : ]
     Y_final = Y_final[ : , -len_test: , : ]
     Y_final = np.squeeze(Y_final[ : , : , 0 ])
-    
+
     return X_final, Y_final
 
 
@@ -89,8 +89,7 @@ def process_and_load_data(path_to_data):
     Main wrapper for the whole pipe. This object is to be instantiated for loading
     and preprocessing the dataset cleanly from Jupyter Notebook or other scripts.
     """
-
-    # Loads raw data and main model hyperparams
+    
     print('Loading raw data and main hyperparams.')
     df = load_dataframe(path_to_data)
     params = open("main_hyperparams.pkl","wb")
