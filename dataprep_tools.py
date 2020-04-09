@@ -50,12 +50,12 @@ def impute_nan(x):
     2. Other NaN's within the series are imputed with a ML model for imputations
     """
     import numpy as np
-    
+
     # Fill left NaN's with 0
     if np.isnan(x[0]):
-        cumsum = np.cumsum(np.isnan(x))    
+        cumsum = np.cumsum(np.isnan(x))
         x[ :np.argmax(cumsum[:-1]==cumsum[1:]) +1] = 0
-    
+
     # Impute internal NaN's with imputation model
     if np.sum(np.isnan(x)) > 0:
         x_imputed = model.predict(x)
@@ -114,26 +114,31 @@ def RNN_dataprep(trend, len_input):
     """
     import numpy as np
 
-    def _univariate_processing(s, window, stepsize=1):
+    def _univariate_processing(variable, window):
         '''Process single vars, gets a 'sliding window' 2D array out of a 1D var'''
-        nrows = ((s.size-window)//stepsize)+1
-        n = s.strides[0]
-        return np.lib.stride_tricks.as_strided(s, shape=(nrows,window), strides=(stepsize*n,n))
-    
+        import numpy as np
+        V = np.empty((len(variable)-window+1, window))  # 2D matrix from variable
+        # iterate for each row/time window
+        for i in range(V.shape[0]):
+            V[i,:] = variable[i : i+window]
+
+        V = V.astype(np.float32)
+        return V
+
     page_vars = trend[ -16: ]  # last 16 cols are page data
-    
+
     x = trend[ 365:-16 ]   # actual time series
     # trend = trend[ 365:-16 ]
-    
-    # Missing values imputation    
-    
+
+    # Missing values imputation
+
 
     trend_lag_year = trend[ 0:len(x) ]   # 365 days ahead
     trend_lag_quarter =  = trend[ 90:len(trend)+90 ]  # 90 days ahead
-    
+
     # scalar page vars (language, website, access, agent) are repeated for whole col
     page_vars = np.column_stack([ np.repeat(j, len(trend)) for j in page_vars ])
-    
+
     # Make a 2D matrix for each trend, composed of:
     T = np.column_stack([
         x,
