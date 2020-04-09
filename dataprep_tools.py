@@ -118,12 +118,9 @@ def RNN_dataprep(trend, len_input):
         '''Process single vars, gets a 'sliding window' 2D array out of a 1D var'''
         import numpy as np
         V = np.empty((len(variable)-window+1, window))  # 2D matrix from variable
-        # iterate for each row/time window
         for i in range(V.shape[0]):
             V[i,:] = variable[i : i+window]
-
-        V = V.astype(np.float32)
-        return V
+        return V.astype(np.float32)
 
     page_vars = trend[ -16: ]  # last 16 cols are page data
 
