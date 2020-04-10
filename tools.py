@@ -185,6 +185,10 @@ def scale_trends(df, params, language):
 #     X = X.astype(np.float32)
 #     return X
 
+def right_trim_nan(x):
+    ''' Trims all NaN's on the right '''
+    return x
+
 
 def RNN_dataprep(x, page, params):
     """
@@ -207,6 +211,20 @@ def RNN_dataprep(x, page, params):
         for i in range(V.shape[0]):
             V[i,:] = variable[i : i+window]
         return V.astype(np.float32)
+
+    # Trim trend to right length
+    x = right_trim_nan(x)
+
+    # Fill inner NaN's with placeholder value
+    x[ np.isnan(x) ] = params['placeholder']
+
+
+
+
+    # -------------------------------------
+
+    ### IMPORTANTE: IL TREND x È TAGLIATO RISPETTO ALLA 
+
 
     T = np.column_stack([
         x,
