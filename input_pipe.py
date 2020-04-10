@@ -1,20 +1,15 @@
 """
-INPUT PIPELINE.
+Author: Ivan Bongiorni,     https://github.com/IvanBongiorni
+2020-04-10
 
-This pipeline is organized as a class that can be called from a Jupyter Notebook
+DATA PREPROCESSING PIPELINE. Takes raw data a process them for model training.
+
+This script contains high level operations, i.e. processing steps for the whole
+dataset of its parts. Operations on cell values are called from tools.py script.
 """
-import pickle
-import numpy as np
-import pandas as pd
-
-from dataprep_tools import *
-
 
 
 # TODO: assicurati che in load_dataframe() avvenga l'ordinamento per colonne
-
-
-
 
 
 def load_dataframe(path_to_data):
@@ -23,7 +18,12 @@ def load_dataframe(path_to_data):
 
     # drop rows that are all NaN's
     df.dropna(axis = 'rows', how = 'all', inplace = True)
-    return df
+
+    # discard Test block on the rightdf
+    test_cutoff = int()
+    df = df.iloc[  ]
+
+    return df, validation, test
 
 
 def get_time_schema(df):
@@ -38,7 +38,7 @@ def get_time_schema(df):
     return weekdays, yeardays
 
 
-def attach_page_data(df):
+def process_page_data(df):
     """
     Attaches page data to main df by iterating process_url() from
     dataprep_tools.py:
@@ -85,27 +85,82 @@ def get_train_and_target_data(df, len_input, len_test):
     return X_final, Y_final
 
 
+
+
+################################################################################
+
+
+
+
 def process_and_load_data(path_to_data):
     """
     Main wrapper for the whole pipe. This object is to be instantiated for loading
     and preprocessing the dataset cleanly from Jupyter Notebook or other scripts.
     """
+    import os
+    import yaml
+    import time
+    import numpy as np
+    import pandas as pd
+
+    import tools  # local module
+
+    languages = [ 'en', 'ja', 'de', 'fr', 'zh', 'ru', 'es', 'na' ]
 
     print('Loading raw data and main hyperparams.')
-    df = load_dataframe(path_to_data)
-    params = open("main_hyperparams.pkl","wb")
+    current_path = os.getcwd()
+    df, page_data = load_dataframe(current_path + '/data/train2.csv')
 
-    print('Imputation of missing data.')
-    df = impute_nan(df)
 
-    print('Scaling of trends by language group.')
-    df, scaling_params = scale_trends(df, path_to_data)
+    ### TODO: SEPARARE df VAL e TEST DIRETTAMENTE IN load_dataframe()
 
-    weekdays, yeardays = get_time_schema(df)
 
-    df = attach_page_data(df)
+    params = yaml.load(open(current_path + '/config.yaml'), yaml.Loader)
 
-    # Prepares data matrices ready for Jupyter Notebooks
-    X_final, Y_final = get_train_and_target_data(df, len_test_series = params['len_test_series'])
+    print('Processing URL information.')
+    page_data = process_page_data(page_data)
+
+    print('Creating time schemas')
+    ### TODO: GENERAZIONE MASCHERE TEMPORALI PER 
+
+    print('Loading imputation model: {}'.format(params['imputation_model']))
+    ### TODO: AGGIUNGERE CARICAMENTO MODELLO
+
+    X_train = []
+    scaling_dict = {}
+
+    print('Preprocessing trends by language group.')
+    for language in languages:
+        start = time.time()
+
+        sdf = df[ page_data['language'] == language ].values
+        sdf_page_data = page_data[ page_data['language'] == language ].values
+
+        for i in range(sdf.shape[0]):
+            X_train.append( RNN_dataprep(sdf[i,:], sdf_page_data, params) )
+
+            # make trend into 2D
+            # imputation from model
+
+            # create time variables
+
+
+
+        sdf, scaling_percentile, = scale_trends(sdf, params)
+        scaling_dict[language] = scaling_percentile
+
+        print('\t{} done in {} ss.'.format(language, round(time.time()-start, 2)))
+
+    # Save scaling params once it's done
+
+
+
+    # df = attach_page_data(df)
+    #
+    # # Prepares data matrices ready for Jupyter Notebooks
+    # X_final, Y_final = get_train_and_target_data(df, len_test_series = params['len_test_series'])
+
+
+    ### TODO: DOBBIAMO RESTITUIRE ARRAY SIA TRAIN CHE VALIDATION
 
     return X_final, Y_final
