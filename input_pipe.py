@@ -120,8 +120,8 @@ def process_and_load_data(path_to_data):
     print('Processing URL information.')
     page_data = process_page_data(page_data)
 
-    print('Creating time schemas')
-    ### TODO: GENERAZIONE MASCHERE TEMPORALI PER 
+    print('Creating time schema')
+    ### TODO: GENERAZIONE MASCHERE TEMPORALI PER
 
     print('Loading imputation model: {}'.format(params['imputation_model']))
     ### TODO: AGGIUNGERE CARICAMENTO MODELLO
@@ -139,10 +139,15 @@ def process_and_load_data(path_to_data):
         for i in range(sdf.shape[0]):
             X_train.append( RNN_dataprep(sdf[i,:], sdf_page_data, params) )
 
-            # make trend into 2D
-            # imputation from model
+            # Right cut of NaN's
+            x = right_trim_nan(x)
 
-            # create time variables
+            # tailor time variables
+            
+
+            # prepare multivariate array - 3D
+
+
 
 
 
@@ -153,6 +158,7 @@ def process_and_load_data(path_to_data):
 
     # Save scaling params once it's done
 
+    # imputation on final matrix from model - trained on 3D input
 
 
     # df = attach_page_data(df)
