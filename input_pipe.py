@@ -87,7 +87,9 @@ def get_train_and_target_data(df, len_input, len_test):
 
 
 
+
 ################################################################################
+
 
 
 
@@ -102,6 +104,7 @@ def process_and_load_data(path_to_data):
     import time
     import numpy as np
     import pandas as pd
+    import tensorflow as tf
 
     import tools  # local module
 
@@ -111,21 +114,17 @@ def process_and_load_data(path_to_data):
     current_path = os.getcwd()
     df, page_data = load_dataframe(current_path + '/data/train2.csv')
 
-
-    ### TODO: SEPARARE df VAL e TEST DIRETTAMENTE IN load_dataframe()
-
-
     params = yaml.load(open(current_path + '/config.yaml'), yaml.Loader)
 
     print('Processing URL information.')
     page_data = process_page_data(page_data)
 
     print('Creating time schema')
-    ### TODO: GENERAZIONE MASCHERE TEMPORALI PER
+    weekdays, yeardays = get_time_schema(df)
 
     print('Loading imputation model: {}'.format(params['imputation_model']))
-    ### TODO: AGGIUNGERE CARICAMENTO MODELLO
-
+    model = tf.keras.models.load_model(current_path + '/saved_models/' + params['imputation_model'])
+    
     X_train = []
     scaling_dict = {}
 
@@ -143,7 +142,7 @@ def process_and_load_data(path_to_data):
             x = right_trim_nan(x)
 
             # tailor time variables
-            
+
 
             # prepare multivariate array - 3D
 
@@ -160,6 +159,8 @@ def process_and_load_data(path_to_data):
 
     # imputation on final matrix from model - trained on 3D input
 
+    # split in T-V-T   ***  HERE  ***
+
 
     # df = attach_page_data(df)
     #
@@ -169,4 +170,4 @@ def process_and_load_data(path_to_data):
 
     ### TODO: DOBBIAMO RESTITUIRE ARRAY SIA TRAIN CHE VALIDATION
 
-    return X_final, Y_final
+    return X
