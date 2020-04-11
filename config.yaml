@@ -2,12 +2,13 @@
 'seed': 173
 
 
-# DATAPREP
-# val_test_len
+# DATA
+'val_test_size': [0.1, 0.1]
 'placeholder': -0.1
 
 
 # MODEL
+'len_input': 200
 'lstm_size': 200
 'conv_filters': [8, 16]
 'conv_activation': 'elu'
