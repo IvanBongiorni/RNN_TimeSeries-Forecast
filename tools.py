@@ -174,8 +174,14 @@ def scale_trends(df, params, language):
 #     return X
 
 def right_trim_nan(x):
-    ''' Trims all NaN's on the right '''
-    return x
+    """ Trims all NaN's on the right """
+    import numpy as np
+
+    if np.isnan(x[-1]):
+        cut = np.argmax(np.isfinite(x[::-1]))
+        return x[ :-cut ]
+    else:
+        return x
 
 
 def univariate_processing(variable, window):
@@ -211,7 +217,7 @@ def RNN_dataprep(t, page, imputation_model, params):
         t[ np.isnan(t) ] = params['placeholder']
         t = imputation_model.predict(t)
 
-        
+
 
         ### IMPORTANTE: BISOGNA
 
