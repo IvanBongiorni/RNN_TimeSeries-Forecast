@@ -47,26 +47,14 @@ def process_url(url):
     return url_features
 
 
-def mask_nan(x):
-    """
-    Masks NaN values using zeros for left NaN's, placeholder values
-    from params for internal ones, cuts NaN's on the right.
-    """
+def left_fill_nan(x):
+    """ Fills all left NaN's with zeros, leaving others intact. """
     import numpy as np
 
-    # Fill left NaN's with 0
     if np.isnan(x[0]):
         cumsum = np.cumsum(np.isnan(x))
         x[ :np.argmax(cumsum[:-1]==cumsum[1:]) +1] = 0
-
-    # Measure fills internal NaN's with placeholder
-
-    # Impute internal NaN's with imputation model
-    if np.sum(np.isnan(x)) > 0:
-        x_imputed = model.predict(x)
-        return x_imputed
-    else:
-        return x
+    return x
 
 
 # def scale_trends(df, path_to_data):
@@ -190,7 +178,16 @@ def right_trim_nan(x):
     return x
 
 
-def RNN_dataprep(x, page, params):
+def univariate_processing(variable, window):
+    '''Process single vars, gets a 'sliding window' 2D array out of a 1D var'''
+    import numpy as np
+    V = np.empty((len(variable)-window+1, window))  # 2D matrix from variable
+    for i in range(V.shape[0]):
+        V[i,:] = variable[i : i+window]
+    return V.astype(np.float32)
+
+
+def RNN_dataprep(t, page, imputation_model, params):
     """
     Main processing function.
     From each trend, returns 3D np.array defined by:
@@ -204,41 +201,34 @@ def RNN_dataprep(x, page, params):
     """
     import numpy as np
 
-    def _univariate_processing(variable, window):
-        '''Process single vars, gets a 'sliding window' 2D array out of a 1D var'''
-        import numpy as np
-        V = np.empty((len(variable)-window+1, window))  # 2D matrix from variable
-        for i in range(V.shape[0]):
-            V[i,:] = variable[i : i+window]
-        return V.astype(np.float32)
-
     # Trim trend to right length
-    x = right_trim_nan(x)
+    t = right_trim_nan(t)
 
-    # Fill inner NaN's with placeholder value
-    x[ np.isnan(x) ] = params['placeholder']
+    if len(t) < params['len_input']:
+        return None
+    else:
+        # Fill inner NaN's with placeholder value and impute
+        t[ np.isnan(t) ] = params['placeholder']
+        t = imputation_model.predict(t)
+
+        
+
+        ### IMPORTANTE: BISOGNA
+
+        # T = np.column_stack([
+        #     t,
+        #     trend_lag_year,     # year time lag
+        #     trend_lag_quarter,  # quarter time lag
+        #     page_vars,          # page vars
+        #     weekdays, yeardays  # temporal position in week and year (scaled to [0, 1])
+        # ])
 
 
 
 
-    # -------------------------------------
+        T = np.empty((T.shape[0]-params['len_input']+1, params['len_input'], T.shape[1]))
 
-    ### IMPORTANTE: IL TREND x È TAGLIATO RISPETTO ALLA 
+        for i in range(T.shape[1]):
+            T[ : , : , i ] = univariate_processing(T[:,i], len_input)
 
-
-    T = np.column_stack([
-        x,
-        trend_lag_year,     # year time lag
-        trend_lag_quarter,  # quarter time lag
-        page_vars,          # page vars
-        weekdays, yeardays  # temporal position in week and year (scaled to [0, 1])
-    ])
-
-    # Use data from T to fill preprocessed matrix for RNN
-    X = np.empty((T.shape[0]-len_input+1, len_input, T.shape[1]))
-
-    for i in range(T.shape[1]):
-        X[ : , : , i ] = _univariate_processing(T[:,i], len_input)
-
-    X = X.astype(np.float32)
-    return X
+        return T
