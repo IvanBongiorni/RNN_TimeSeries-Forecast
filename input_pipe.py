@@ -35,6 +35,13 @@ def get_time_schema(df):
     weekdays = weekdays.values / weekdays.max()
     yeardays = daterange.dt.dayofyear
     yeardays = yeardays.values / yeardays.max()
+
+    weekdays = weekdays.values
+    yeardays = yeardays.values
+
+    weekdays = weekdays[ 365: ]
+    yeardays = yeardays[ 365: ]
+
     return weekdays, yeardays
 
 
@@ -124,7 +131,7 @@ def process_and_load_data(path_to_data):
 
     print('Loading imputation model: {}'.format(params['imputation_model']))
     model = tf.keras.models.load_model(current_path + '/saved_models/' + params['imputation_model'])
-    
+
     X_train = []
     scaling_dict = {}
 
@@ -138,18 +145,14 @@ def process_and_load_data(path_to_data):
         for i in range(sdf.shape[0]):
             X_train.append( RNN_dataprep(sdf[i,:], sdf_page_data, params) )
 
-            # Right cut of NaN's
-            x = right_trim_nan(x)
+        ### TODO: Bisogna ancora inserire in modo accettabile weekdays e yeardays
+        #   sia nella loro generazione che nella loro applicazione corretta
 
-            # tailor time variables
-
-
-            # prepare multivariate array - 3D
+        ### TODO: La scalatura deve avvenire dopo l'imputazione (per evitare i NaN)
+        #   e tenendo fuori i dati di validation
 
 
-
-
-
+        ### IMPORTANTE: Correggere scale_trends() applicando la scalatura sui dati di Train
         sdf, scaling_percentile, = scale_trends(sdf, params)
         scaling_dict[language] = scaling_percentile
 
