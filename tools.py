@@ -92,13 +92,18 @@ def left_fill_nan(x):
 #
 #     return df
 
-def scale_trends(df, params, language):
+def scale_trends(X, params, language):
     """
     Takes a linguistic sub-dataframe and applies a robust custom scaling in two steps:
         1. log( x + 1 )
         2. Robust min-max scaling to [ 0, 99th percentile ]
     Percentiles are pickled as as ./data/scaling_dict.pkl for replications.
     """
+
+    ### TODO: IMPORTANTE: La scalatura deve avvenire sui dati di Training,
+    #   escludendo quelli di Validation
+    
+
     import pickle
     import numpy as np
     import pandas as pd
@@ -185,7 +190,10 @@ def right_trim_nan(x):
 
 
 def univariate_processing(variable, window):
-    '''Process single vars, gets a 'sliding window' 2D array out of a 1D var'''
+    '''
+    Process single vars, gets a 'sliding window' 2D array out of a 1D var
+    TO be iterated for each variable in RNN_dataprep().
+    '''
     import numpy as np
     V = np.empty((len(variable)-window+1, window))  # 2D matrix from variable
     for i in range(V.shape[0]):
@@ -210,26 +218,23 @@ def RNN_dataprep(t, page, imputation_model, params):
     # Trim trend to right length
     t = right_trim_nan(t)
 
-    if len(t) < params['len_input']:
+    if len(t) < 365 + params['len_input'] + 28:
         return None
     else:
-        # Fill inner NaN's with placeholder value and impute
-        t[ np.isnan(t) ] = params['placeholder']
-        t = imputation_model.predict(t)
+        trend_lag_year = t[ :-365 ]
+        trend_lag_quarter = t[ 180:-180 ]
+        t = t[ 365: ]
 
+        weekdays
+        yeardays
 
-
-        ### IMPORTANTE: BISOGNA
-
-        # T = np.column_stack([
-        #     t,
-        #     trend_lag_year,     # year time lag
-        #     trend_lag_quarter,  # quarter time lag
-        #     page_vars,          # page vars
-        #     weekdays, yeardays  # temporal position in week and year (scaled to [0, 1])
-        # ])
-
-
+        T = np.column_stack([
+            t
+            trend_lag_quarter,  # quarter time lag
+            trend_lag_year,     # year time lag
+            page_vars,          # page vars
+            weekdays, yeardays  # temporal position in week and year (scaled to [0, 1])
+        ])
 
 
         T = np.empty((T.shape[0]-params['len_input']+1, params['len_input'], T.shape[1]))
