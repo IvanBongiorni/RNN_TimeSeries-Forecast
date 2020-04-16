@@ -27,7 +27,7 @@ def load_dataframe(path_to_data):
 
 
 def get_time_schema(df):
-    """ Returns vectors with patterns for time-related variables (year/week days)
+    """ Returns np.array with patterns for time-related variables (year/week days)
     in [0,1] range, to be repeated on all trends. """
     daterange = pd.date_range(df.columns[1], df.columns[-1], freq='D').to_series()
 
@@ -39,6 +39,7 @@ def get_time_schema(df):
     weekdays = weekdays.values
     yeardays = yeardays.values
 
+    # First year won't enter the Train set because of year lag
     weekdays = weekdays[ 365: ]
     yeardays = yeardays[ 365: ]
 
@@ -143,14 +144,14 @@ def process_and_load_data(path_to_data):
         sdf_page_data = page_data[ page_data['language'] == language ].values
 
         for i in range(sdf.shape[0]):
-            X_train.append( RNN_dataprep(sdf[i,:], sdf_page_data, params) )
-
-        ### TODO: Bisogna ancora inserire in modo accettabile weekdays e yeardays
-        #   sia nella loro generazione che nella loro applicazione corretta
+            X_train.append( RNN_dataprep(t = sdf[i,:],
+                                         page_vars = sdf_page_data[i,:],
+                                         day_week = weekdays,
+                                         day_year = yeardays,
+                                         params = params))
 
         ### TODO: La scalatura deve avvenire dopo l'imputazione (per evitare i NaN)
         #   e tenendo fuori i dati di validation
-
 
         ### IMPORTANTE: Correggere scale_trends() applicando la scalatura sui dati di Train
         sdf, scaling_percentile, = scale_trends(sdf, params)
