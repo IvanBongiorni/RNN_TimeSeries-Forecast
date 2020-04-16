@@ -9,6 +9,7 @@
 
 # MODEL
 'len_input': 200
+'len_prediction': 28
 'lstm_size': 200
 'conv_filters': [8, 16]
 'conv_activation': 'elu'
