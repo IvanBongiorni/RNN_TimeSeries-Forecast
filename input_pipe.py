@@ -20,10 +20,9 @@ def load_dataframe(path_to_data):
     df.dropna(axis = 'rows', how = 'all', inplace = True)
 
     # discard Test block on the rightdf
-    test_cutoff = int()
-    df = df.iloc[  ]
-
-    return df, validation, test
+    test_cutoff = int(params['val_test_size'][1] * df.shape[1])
+    df = df.iloc[ : , :test_cutoff ]
+    return df
 
 
 def get_time_schema(df):
@@ -67,42 +66,33 @@ def process_page_data(df):
     return df
 
 
-def get_train_and_target_data(df, len_input, len_test):
-    languages = ['en', 'ja', 'de', 'fr', 'zh', 'ru', 'es', 'na']
-    X_final = []
-
-    for language in languages:
-        print('Preprocessing of language group: {}'.format(language))
-        language_pick = 'language_{}'.format(language)
-        sdf = df[ df[language_pick] == 1 ].values
-
-        sdf = scale_data(sdf)
-
-        # Iterate processing on each trend
-        sdf = [ RNN_dataprep(sdf[i,:,:], len_input) for i in range(sdf.shape[0]) ]
-        sdf = np.concatenate(sdf, axis = 0)
-
-        X_final.append(sdf)
-
-    X_final = np.concatenate(X_final, axis = 0)
-
-    X_final = X_final[ : , :-len_test , : ]
-    Y_final = Y_final[ : , -len_test: , : ]
-    Y_final = np.squeeze(Y_final[ : , : , 0 ])
-
-    return X_final, Y_final
-
-
+# def get_train_and_target_data(df, len_input, len_test):
+#     languages = ['en', 'ja', 'de', 'fr', 'zh', 'ru', 'es', 'na']
+#     X_final = []
+#
+#     for language in languages:
+#         print('Preprocessing of language group: {}'.format(language))
+#         language_pick = 'language_{}'.format(language)
+#         sdf = df[ df[language_pick] == 1 ].values
+#
+#         sdf = scale_data(sdf)
+#
+#         # Iterate processing on each trend
+#         sdf = [ RNN_dataprep(sdf[i,:,:], len_input) for i in range(sdf.shape[0]) ]
+#         sdf = np.concatenate(sdf, axis = 0)
+#
+#         X_final.append(sdf)
+#
+#     X_final = np.concatenate(X_final, axis = 0)
+#
+#     X_final = X_final[ : , :-len_test , : ]
+#     Y_final = Y_final[ : , -len_test: , : ]
+#     Y_final = np.squeeze(Y_final[ : , : , 0 ])
+#
+#     return X_final, Y_final
 
 
-
-################################################################################
-
-
-
-
-
-def process_and_load_data(path_to_data):
+def process_and_load_data():
     """
     Main wrapper for the whole pipe. This object is to be instantiated for loading
     and preprocessing the dataset cleanly from Jupyter Notebook or other scripts.
@@ -120,7 +110,7 @@ def process_and_load_data(path_to_data):
 
     print('Loading raw data and main hyperparams.')
     current_path = os.getcwd()
-    df, page_data = load_dataframe(current_path + '/data/train2.csv')
+    df = load_dataframe(current_path + '/data/train2.csv')
 
     params = yaml.load(open(current_path + '/config.yaml'), yaml.Loader)
 
@@ -143,6 +133,7 @@ def process_and_load_data(path_to_data):
         sdf = df[ page_data['language'] == language ].values
         sdf_page_data = page_data[ page_data['language'] == language ].values
 
+        print('\t{}'.format(language))
         for i in range(sdf.shape[0]):
             X_train.append( RNN_dataprep(t = sdf[i,:],
                                          page_vars = sdf_page_data[i,:],
@@ -175,3 +166,7 @@ def process_and_load_data(path_to_data):
     ### TODO: DOBBIAMO RESTITUIRE ARRAY SIA TRAIN CHE VALIDATION
 
     return X
+
+
+if __name__ == '__main__':
+    process_and_load_data()
