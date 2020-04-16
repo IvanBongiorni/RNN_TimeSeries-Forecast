@@ -102,7 +102,7 @@ def scale_trends(X, params, language):
 
     ### TODO: IMPORTANTE: La scalatura deve avvenire sui dati di Training,
     #   escludendo quelli di Validation
-    
+
 
     import pickle
     import numpy as np
@@ -201,11 +201,20 @@ def univariate_processing(variable, window):
     return V.astype(np.float32)
 
 
-def RNN_dataprep(t, page, imputation_model, params):
+def RNN_dataprep(t, page_vars, day_week, day_year, params):
     """
-    Main processing function.
+    Processes a single trend, to be iterated.
     From each trend, returns 3D np.array defined by:
         ( no obs. , length input series , no input variables )
+    Where variables, stored in page object, are:
+        - trend
+        - quarter (-180) and year (-365) lags
+        - one-hot page variables: language, website, website, access, agent
+        - day of the week and day of the year in [0, 1]
+
+    Apply right trim. If the resulting trend is too short, discard the observation.
+    If it's long enough (len train + len prediction)
+
     Steps:
         1. From trend, trend vars and page vars, returns 2D np.array with one col
             per variable
@@ -218,24 +227,28 @@ def RNN_dataprep(t, page, imputation_model, params):
     # Trim trend to right length
     t = right_trim_nan(t)
 
-    if len(t) < 365 + params['len_input'] + 28:
+    if len(t) < 365 + params['len_input'] + params['len_prediction']:
         return None
     else:
         trend_lag_year = t[ :-365 ]
         trend_lag_quarter = t[ 180:-180 ]
+
         t = t[ 365: ]
 
-        weekdays
-        yeardays
+        day_week = day_week[ :len(t) ]
+        day_year = day_year[ :len(t) ]
 
         T = np.column_stack([
             t
-            trend_lag_quarter,  # quarter time lag
-            trend_lag_year,     # year time lag
-            page_vars,          # page vars
-            weekdays, yeardays  # temporal position in week and year (scaled to [0, 1])
-        ])
+            trend_lag_quarter,
+            trend_lag_year,
 
+            ### TODO: IMPORTANTE _ FORSE DEVO ESTENDERE I DATI DI page_vars 0
+            page_vars,
+
+            weekdays,
+            yeardays
+        ])
 
         T = np.empty((T.shape[0]-params['len_input']+1, params['len_input'], T.shape[1]))
 
