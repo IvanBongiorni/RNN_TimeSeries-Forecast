@@ -47,6 +47,7 @@ def process_url(url):
     return url_features
 
 
+@numba.jit(python = True)
 def left_fill_nan(x):
     """ Fills all left NaN's with zeros, leaving others intact. """
     import numpy as np
@@ -92,6 +93,7 @@ def left_fill_nan(x):
 #
 #     return df
 
+@numba.jit(python = True)
 def scale_trends(X, params, language):
     """
     Takes a linguistic sub-dataframe and applies a robust custom scaling in two steps:
@@ -178,6 +180,7 @@ def scale_trends(X, params, language):
 #     X = X.astype(np.float32)
 #     return X
 
+@numba.jit(python = True)
 def right_trim_nan(x):
     """ Trims all NaN's on the right """
     import numpy as np
@@ -189,6 +192,7 @@ def right_trim_nan(x):
         return x
 
 
+@numba.jit(python = True)
 def univariate_processing(variable, window):
     '''
     Process single vars, gets a 'sliding window' 2D array out of a 1D var
@@ -201,6 +205,7 @@ def univariate_processing(variable, window):
     return V.astype(np.float32)
 
 
+@numba.jit(python = True)
 def RNN_dataprep(t, page_vars, day_week, day_year, params):
     """
     Processes a single trend, to be iterated.
@@ -209,7 +214,7 @@ def RNN_dataprep(t, page_vars, day_week, day_year, params):
     Where variables, stored in page object, are:
         - trend
         - quarter (-180) and year (-365) lags
-        - one-hot page variables: language, website, website, access, agent
+        - one-hot page variables: language, website, access, agent
         - day of the week and day of the year in [0, 1]
 
     Apply right trim. If the resulting trend is too short, discard the observation.
@@ -238,12 +243,21 @@ def RNN_dataprep(t, page_vars, day_week, day_year, params):
         day_week = day_week[ :len(t) ]
         day_year = day_year[ :len(t) ]
 
+        # Multiply page data on the whole
+        # language = np.repeat(page_vars[0], len(t))
+        # website = np.repeat(page_vars[1], len(t))
+        # access = np.repeat(page_vars[2], len(t))
+        # agent = np.repeat(page_vars[3], len(t))
+
         T = np.column_stack([
             t
             trend_lag_quarter,
             trend_lag_year,
 
-            ### TODO: IMPORTANTE _ FORSE DEVO ESTENDERE I DATI DI page_vars 0
+            ### TODO: IMPORTANTE _ DEVO ESTENDERE I DATI DI page_vars 0
+            ### Arrivano come un vettore 1D
+
+
             page_vars,
 
             weekdays,
