@@ -144,6 +144,7 @@ def process_and_load_data():
         ### TODO: La scalatura deve avvenire dopo l'imputazione (per evitare i NaN)
         #   e tenendo fuori i dati di validation
 
+
         ### IMPORTANTE: Correggere scale_trends() applicando la scalatura sui dati di Train
         sdf, scaling_percentile, = scale_trends(sdf, params)
         scaling_dict[language] = scaling_percentile
@@ -151,21 +152,44 @@ def process_and_load_data():
         print('\t{} done in {} ss.'.format(language, round(time.time()-start, 2)))
 
     # Save scaling params once it's done
+    print('Loading imputation model: {}.h5'.format(params['imputation_model']))
 
-    # imputation on final matrix from model - trained on 3D input
+    imputer = tf.keras.load_model('{}/imputation_model/{}.h5'.format(current_path, params['imputation_model']))
 
-    # split in T-V-T   ***  HERE  ***
+    # Order of variables is:
+        # t,
+        # trend_lag_quarter,
+        # trend_lag_year,
+        # weekdays,
+        # yeardays
+        # + page variables
 
+    # I must run imputation model on the first three variables (i.e. trend data)
+    for i in range(3):
+        original = X_train(X_train[ : , : , i ])
+        imputed = imputer.predict(original)
+
+        # Substitute imputed to original only when NaN and put it back
+        original[ np.isnan(original) ] = imputed
+        X_train[ : , : , i ] = original
+
+    del original, imputed, imputer
+
+    # Split in Train and Validation
+    cut = int()
+
+    #####
+    # TODO: ESEGUIRE PARTIZIONE TRAIN - VAL
+
+    Y_train = X_train[ : , cut: , : ]
 
     # df = attach_page_data(df)
-    #
     # # Prepares data matrices ready for Jupyter Notebooks
     # X_final, Y_final = get_train_and_target_data(df, len_test_series = params['len_test_series'])
 
 
-    ### TODO: DOBBIAMO RESTITUIRE ARRAY SIA TRAIN CHE VALIDATION
 
-    return X
+    return X_train, Y_train, X_val, Y_val
 
 
 if __name__ == '__main__':
