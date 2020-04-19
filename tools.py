@@ -8,6 +8,7 @@ PRE-PROCESSING TOOLS FOR INPUT PIPELINE.
 import pickle
 import re
 import numpy as np
+import numba
 import pandas as pd
 
 
@@ -64,31 +65,23 @@ def scale_trends(X, params, language):
     Takes a linguistic sub-dataframe and applies a robust custom scaling in two steps:
         1. log( x + 1 )
         2. Robust min-max scaling to [ 0, 99th percentile ]
-    Percentiles are pickled as as ./data/scaling_dict.pkl for replications.
+
+    Returns scaled sub-df and scaling percentile, to be saved later in scaling dict
     """
+    import numpy as np
 
     ### TODO: IMPORTANTE: La scalatura deve avvenire sui dati di Training,
     #   escludendo quelli di Validation
 
+    # Scaling parameters must be calculated without Validation data
+    percentile_99th = np.percentile(X.reshape((X.size, )), 99)
 
-    import pickle
-    import numpy as np
-    import pandas as pd
 
     # log(x+1) and robust scale to [0, 99th percentile]
     X = np.log(X + 1)
-    percentile_99th = np.percentile(X.reshape((X.size, )), 99)
     X = ( X - np.min(X) ) / ( percentile_99th - np.min(X) )
 
-    # store 99th percentile into scaling_dict
-    scaling_dict[language] = percentile_99th
-
-    # pickle this dict into save_path
-    d = open(path_to_params + 'scaling_dict.pkl','wb')
-    pickle.dump(scaling_dict, f)
-    d.close()
-
-    return df
+    return df, percentile_99th
 
 
 @numba.jit(python = True)
@@ -178,5 +171,5 @@ def RNN_dataprep(t, page_vars, day_week, day_year, params):
 
     X_processed = [ univariate_processing(T[:,i], len_input) for i in range(T.shape[1]) ]
     X_processed = np.concatenate(X_processed)
-    
+
     return X_processed
