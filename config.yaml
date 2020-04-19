@@ -1,11 +1,11 @@
 # Configuration file
 'seed': 173
-
+'model_name': 'model_00'
+'imputation_model': 'imputer_00'
 
 # DATA
 'val_test_size': [0.1, 0.1]
 'placeholder': -0.1
-
 
 # MODEL
 'len_input': 200
