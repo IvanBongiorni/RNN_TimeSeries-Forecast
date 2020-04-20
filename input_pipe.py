@@ -66,32 +66,6 @@ def process_page_data(df):
     return df
 
 
-# def get_train_and_target_data(df, len_input, len_test):
-#     languages = ['en', 'ja', 'de', 'fr', 'zh', 'ru', 'es', 'na']
-#     X_final = []
-#
-#     for language in languages:
-#         print('Preprocessing of language group: {}'.format(language))
-#         language_pick = 'language_{}'.format(language)
-#         sdf = df[ df[language_pick] == 1 ].values
-#
-#         sdf = scale_data(sdf)
-#
-#         # Iterate processing on each trend
-#         sdf = [ RNN_dataprep(sdf[i,:,:], len_input) for i in range(sdf.shape[0]) ]
-#         sdf = np.concatenate(sdf, axis = 0)
-#
-#         X_final.append(sdf)
-#
-#     X_final = np.concatenate(X_final, axis = 0)
-#
-#     X_final = X_final[ : , :-len_test , : ]
-#     Y_final = Y_final[ : , -len_test: , : ]
-#     Y_final = np.squeeze(Y_final[ : , : , 0 ])
-#
-#     return X_final, Y_final
-
-
 def process_and_load_data():
     """
     Main wrapper for the whole pipe. This object is to be instantiated for loading
@@ -151,7 +125,10 @@ def process_and_load_data():
 
         print('\t{} done in {} ss.'.format(language, round(time.time()-start, 2)))
 
-    # Save scaling params once it's done
+    ### TODO: Salvare il dizionario per la scalatura
+
+    # Pickle scaling params once it's done
+
     print('Loading imputation model: {}.h5'.format(params['imputation_model']))
 
     imputer = tf.keras.load_model('{}/imputation_model/{}.h5'.format(current_path, params['imputation_model']))
