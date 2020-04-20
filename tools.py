@@ -74,8 +74,8 @@ def scale_trends(X, params, language):
     #   escludendo quelli di Validation
 
     # Scaling parameters must be calculated without Validation data
-    percentile_99th = np.percentile(X.reshape((X.size, )), 99)
-
+    cut = int(X.shape[1] * (1 - (params['val_test_size'][0] + params['val_test_size'][1])))
+    percentile_99th = np.percentile(X[ : , :cut ]), 99)
 
     # log(x+1) and robust scale to [0, 99th percentile]
     X = np.log(X + 1)
