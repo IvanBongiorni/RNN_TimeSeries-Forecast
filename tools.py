@@ -111,33 +111,27 @@ def univariate_processing(variable, window):
 
 @numba.jit(python = True)
 def RNN_dataprep(t, page_vars, day_week, day_year, params):
-    """
-    Processes a single trend, to be iterated.
-    From each trend, returns 3D np.array defined by:
-        ( no obs. , length input series , no input variables )
-    Where variables, stored in page object, are:
-        - trend
-        - quarter (-180) and year (-365) lags
-        - one-hot page variables: language, website, access, agent
-        - day of the week and day of the year in [0, 1]
-
-    Apply right trim. If the resulting trend is too short, discard the observation.
-    If it's long enough (len train + len prediction)
-
-    Steps:
-        1. From trend, trend vars and page vars, returns 2D np.array with one col
-            per variable
-        2. Creates empty 3D np.array, and fills it variable by variable by running
-            _univariate_processing(). It takes a variable, turns it into a 2D
-            matrix, then pastes into the final 3D matrix as a slice
-    """
+    # """
+    # Processes a single trend, to be iterated.
+    # From each trend, returns 3D np.array defined by:
+    #     ( no obs. , length input series , no input variables )
+    # Where variables, stored in page object, are:
+    #     - trend
+    #     - quarter (-180) and year (-365) lags
+    #     - one-hot page variables: language, website, access, agent
+    #     - day of the week and day of the year in [0, 1]
+    #
+    # Apply right trim. If the resulting trend is too short, discard the observation.
+    # If it's long enough (len train + len prediction)
+    #
+    # Steps:
+    #     1. From trend, trend vars and page vars, returns 2D np.array with one col
+    #         per variable
+    #     2. Creates empty 3D np.array, and fills it variable by variable by running
+    #         _univariate_processing(). It takes a variable, turns it into a 2D
+    #         matrix, then pastes into the final 3D matrix as a slice
+    # """
     import numpy as np
-
-    # Trim trend to right length
-    t = right_trim_nan(t)
-
-    if len(t) < 365 + params['len_input'] + params['len_prediction']:
-        return None
 
     # Cut trend and time lags
     trend_lag_year = t[ :-365 ]

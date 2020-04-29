@@ -100,72 +100,92 @@ def process_and_load_data():
     scaling_dict = {}
 
     print('Preprocessing trends by language group.')
+    X_train = []
+    X_test = []
+
+    scaling_dict = {}   # This is to save scaling params - by language subgroup
+
     for language in languages:
         start = time.time()
 
         sdf = df[ page_data['language'] == language ].values
         sdf_page_data = page_data[ page_data['language'] == language ].values
 
-        print('\t{}'.format(language))
+        # Fill left-NaN's with zero
         for i in range(sdf.shape[0]):
-            X_train.append( RNN_dataprep(t = sdf[i,:],
-                                         page_vars = sdf_page_data[i,:],
-                                         day_week = weekdays,
-                                         day_year = yeardays,
-                                         params = params))
+            sdf[ i , : ] = series
+            series = tools.left_zero_fill( series )
+            series = tools.right_trim_nan( series )
+            sdf[ i , : ] = series
 
-        ### TODO: La scalatura deve avvenire dopo l'imputazione (per evitare i NaN)
-        #   e tenendo fuori i dati di validation
+        ###
+        ### SPLIT IN TRAIN - VAL - TEST
+        ###   This must be done differently from imputation project
+        # sdf_train =
+        # sdf_val =
+        # sdf_test =
 
+        ### IMPORTANT: PAGE DATA TOO MUST BE FILTERED THE SAME WAY
+        # sdf_page_data_train
+        # sdf_page_data_val
+        # sdf_page_data_test
 
-        ### IMPORTANTE: Correggere scale_trends() applicando la scalatura sui dati di Train
-        sdf, scaling_percentile, = scale_trends(sdf, params)
+        # Scale and save param into dict
+        scaling_percentile = np.percentile(sdf_train, 99)
+        sdf_train = scale_trends(sdf, scaling_percentile)
+        sdf_val = scale_trends(sdf_val, scaling_percentile)
+        sdf_test = scale_trends(sdf_val, scaling_percentile)
         scaling_dict[language] = scaling_percentile
 
-        print('\t{} done in {} ss.'.format(language, round(time.time()-start, 2)))
+        # Process to RNN format ('sliding window' to input series) and pack into final array
+        sdf_train = [ tools.RNN_dataprep(               ) for series in sdf_train ]
+        sdf_train = np.concatenate(                  )
 
-    ### TODO: Salvare il dizionario per la scalatura
+        sdf_val = [ tools.RNN_dataprep(series, params) for series in sdf_val ]
+        sdf_val = np.concatenate(sdf_val)
 
-    # Pickle scaling params once it's done
+        X_train.append(sdf_train)
+        X_val.append(sdf_val)
 
+        print("\tSub-dataframe for language '{}' executed in {} ss.".format(language, round(time.time()-start, 2)))
+
+    # Concatenate datasets (shuffle X_train for batch training)
+    X_train = np.concatenate(X_train)
+    shuffle = np.random.choice(X.shape[0], X.shape[0] replace = False)
+    X_train = X_train[ shuffle , : ]
+    X_val = np.concatenate(X_val)
+
+    ##  Imputation
     print('Loading imputation model: {}.h5'.format(params['imputation_model']))
-
     imputer = tf.keras.load_model('{}/imputation_model/{}.h5'.format(current_path, params['imputation_model']))
-
     # Order of variables is:
-        # t,
-        # trend_lag_quarter,
-        # trend_lag_year,
-        # weekdays,
-        # yeardays
-        # + page variables
+    # t,
+    # trend_lag_quarter,
+    # trend_lag_year,
+    # and then: weekdays,  yeardays  + four page variables
 
-    # I must run imputation model on the first three variables (i.e. trend data)
-    for i in range(3):
-        original = X_train(X_train[ : , : , i ])
-        imputed = imputer.predict(original)
-
-        # Substitute imputed to original only when NaN and put it back
-        original[ np.isnan(original) ] = imputed
-        X_train[ : , : , i ] = original
-
-    del original, imputed, imputer
-
-    # Split in Train and Validation
-    cut = int()
-
-    #####
-    # TODO: ESEGUIRE PARTIZIONE TRAIN - VAL
-
-    Y_train = X_train[ : , cut: , : ]
-
-    # df = attach_page_data(df)
-    # # Prepares data matrices ready for Jupyter Notebooks
-    # X_final, Y_final = get_train_and_target_data(df, len_test_series = params['len_test_series'])
+    # Imputation must happen for the first three vars (trend data)
+    # line by line to avoid excessive computational costs
+    for var in range(3):
+        for i in range():
+            X_train[ i , : , var ] = imputer.predict( X_train[ i , : , var ] )
+            X_test[ i , : , var ] = imputer.predict( X_test[ i , : , var ] )
 
 
+    #### IMPORTANT:
+    #### [ NUMPY 2 PANDAS 2 PICKLE ] DOESN'T WORK WITH 3D ARRAYS
+    # Must use pickle library
 
-    return X_train, Y_train, X_val, Y_val
+    # Then pickle all, ready for training
+    pickle.dump(X_train, open( os.getcwd() + '/data_processed/X_train.pkl' ))
+    pickle.dump(X_test, open(os.getcwd() + '/data_processed/X_val.pkl'))
+
+    # Save scaling params to file
+    yaml.dump(scaling_dict,
+              open( os.getcwd() + '/data_processed/scaling_dict.yaml', 'w'),
+              default_flow_style = False)
+
+    return None
 
 
 if __name__ == '__main__':
