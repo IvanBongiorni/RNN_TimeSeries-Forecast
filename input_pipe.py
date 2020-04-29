@@ -61,9 +61,8 @@ def process_page_data(df):
     page_data['Page'] = df['Page'].copy()  # Attach 'Page' to page_data for merging
 
     # Attach page_data to main df and drops 'Page' col with links
-    df = df.merge(page_data, on = 'Page')
     df.drop('Page', axis = 1, inplace = True)
-    return df
+    return df, page_data
 
 
 def process_and_load_data():
@@ -89,7 +88,7 @@ def process_and_load_data():
     params = yaml.load(open(current_path + '/config.yaml'), yaml.Loader)
 
     print('Processing URL information.')
-    page_data = process_page_data(page_data)
+    df, page_data = process_page_data(page_data)
 
     print('Creating time schema')
     weekdays, yeardays = get_time_schema(df)
