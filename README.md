@@ -4,7 +4,7 @@
 The model is hybrid Seq2seq with LSTM and Convolutional Encoder. It is implemented in **TensorFlow 2.1** and trained on the Wikipedia [Web Traffic Time Series Forecasting](https://www.kaggle.com/c/web-traffic-time-series-forecasting) dataset from Kaggle.
 
 ## Model Structure
-See this explanatory Notebook.
+See this how_it_works.md file.
 
 ## Structure of the repository
 - `config.yaml`: configuration file for hyperparameters
