@@ -115,10 +115,9 @@ def process_and_load_data():
         for i in range(sdf.shape[0]):
             sdf[ i , : ] = series
             series = tools.left_zero_fill( series )
-            series = tools.right_trim_nan( series )
+
             sdf[ i , : ] = series
 
-        ###
         ### SPLIT IN TRAIN - VAL - TEST
         ###   This must be done differently from imputation project
         # sdf_train =
@@ -136,10 +135,10 @@ def process_and_load_data():
         sdf_val = scale_trends(sdf_val, scaling_percentile)
         sdf_test = scale_trends(sdf_val, scaling_percentile)
         scaling_dict[language] = scaling_percentile
-
+        
         # Process to RNN format ('sliding window' to input series) and pack into final array
-        sdf_train = [ tools.RNN_dataprep(               ) for series in sdf_train ]
-        sdf_train = np.concatenate(                  )
+        sdf_train = [ tools.RNN_dataprep(sdf[i,:], sdf_page_data[i,:], weekdays, yeardays, params) for series in sdf_train ]
+        sdf_train = np.concatenate(sdf_train)
 
         sdf_val = [ tools.RNN_dataprep(series, params) for series in sdf_val ]
         sdf_val = np.concatenate(sdf_val)
@@ -154,27 +153,6 @@ def process_and_load_data():
     shuffle = np.random.choice(X.shape[0], X.shape[0] replace = False)
     X_train = X_train[ shuffle , : ]
     X_val = np.concatenate(X_val)
-
-    ##  Imputation
-    print('Loading imputation model: {}.h5'.format(params['imputation_model']))
-    imputer = tf.keras.load_model('{}/imputation_model/{}.h5'.format(current_path, params['imputation_model']))
-    # Order of variables is:
-    # t,
-    # trend_lag_quarter,
-    # trend_lag_year,
-    # and then: weekdays,  yeardays  + four page variables
-
-    # Imputation must happen for the first three vars (trend data)
-    # line by line to avoid excessive computational costs
-    for var in range(3):
-        for i in range():
-            X_train[ i , : , var ] = imputer.predict( X_train[ i , : , var ] )
-            X_test[ i , : , var ] = imputer.predict( X_test[ i , : , var ] )
-
-
-    #### IMPORTANT:
-    #### [ NUMPY 2 PANDAS 2 PICKLE ] DOESN'T WORK WITH 3D ARRAYS
-    # Must use pickle library
 
     # Then pickle all, ready for training
     pickle.dump(X_train, open( os.getcwd() + '/data_processed/X_train.pkl' ))

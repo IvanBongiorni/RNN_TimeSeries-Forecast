@@ -164,6 +164,6 @@ def RNN_dataprep(t, page_vars, day_week, day_year, params):
     #     X_processed.append( univariate_processing(T[:,i], len_input) )
 
     X_processed = [ univariate_processing(T[:,i], len_input) for i in range(T.shape[1]) ]
-    X_processed = np.concatenate(X_processed)
+    X_processed = np.dstack(X_processed)
 
     return X_processed
