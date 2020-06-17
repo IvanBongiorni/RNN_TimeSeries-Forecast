@@ -1,10 +1,12 @@
+# WORK IN PROGRESS
+
 # Convolutional Recurrent Seq2seq Model for Wikipedia Web Traffic Forecasting
 
 ## Description
-The model is hybrid Seq2seq with LSTM and Convolutional Encoder. It is implemented in **TensorFlow 2.1** and trained on the Wikipedia [Web Traffic Time Series Forecasting](https://www.kaggle.com/c/web-traffic-time-series-forecasting) dataset from Kaggle.
+The model is a Convolutional-Recurrent Neural Network for time series forecast. It is implemented in **TensorFlow 2.1** and trained on the Wikipedia [Web Traffic Time Series Forecasting](https://www.kaggle.com/c/web-traffic-time-series-forecasting) dataset from Kaggle.
 
 ## Model Structure
-See this how_it_works.md file.
+For a detailed explanation of its implementation, see [how_it_works.md]() file.
 
 ## Structure of the repository
 - `config.yaml`: configuration file for hyperparameters
@@ -24,10 +26,11 @@ from terminal. The second part is the actual training code; it is activated from
 `python -m train_model.py`
 
 ## Modules
+```
 tensorflow == 2.1.0
 numpy
 pandas
-
+```
 
 ## Hardware
 I used a pretty powerful laptop, with 64GB or RAM and NVidia RTX 2070 GPU. I highly recommend GPU training to avoid excessive computational times.
