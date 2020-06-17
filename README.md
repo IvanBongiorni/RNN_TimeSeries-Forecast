@@ -1,6 +1,6 @@
 # WORK IN PROGRESS
 
-# Convolutional Recurrent Seq2seq Model for Wikipedia Web Traffic Forecasting
+# Convolutional Recurrent Neural Network for Time Series Forecasting
 
 ## Description
 The model is a Convolutional-Recurrent Neural Network for time series forecast. It is implemented in **TensorFlow 2.1** and trained on the Wikipedia [Web Traffic Time Series Forecasting](https://www.kaggle.com/c/web-traffic-time-series-forecasting) dataset from Kaggle.
