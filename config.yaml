@@ -1,23 +1,24 @@
 # Configuration file
-'seed': 173
-'model_name': 'model_00'
-'imputation_model': 'imputer_00'
+seed: 173
+model_name: 'model_00'
+imputation_model: 'imputer_00'
 
 # DATA
-'val_test_size': [0.1, 0.1]
-'placeholder': -0.1
+val_size: 0.1
+# test_size: 0.1
+placeholder: -0.1
 
 # MODEL
-'len_input': 200
-'len_prediction': 28
-'lstm_size': 200
-'conv_filters': [8, 16]
-'conv_activation': 'elu'
-'use_batchnorm': True
-'decoder_hidden_size': 200
+len_input: 128
+len_prediction: 28
+lstm_size: 200
+conv_filters: [8, 16]
+conv_activation: 'elu'
+use_batchnorm: True
+decoder_hidden_size: 200
 
 # TRAINING
-'learning_rate': 0.0001
-'n_epochs': 15
-'batch_size': 128
-'shuffle': True
+learning_rate: 0.0001
+n_epochs: 15
+batch_size: 128
+shuffle: True
