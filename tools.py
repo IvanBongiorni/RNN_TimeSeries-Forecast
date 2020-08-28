@@ -1,15 +1,65 @@
 """
-Author: Ivan Bongiorni,     https://github.com/IvanBongiorni
-2020-04-10
-
-PRE-PROCESSING TOOLS FOR INPUT PIPELINE.
+Author: Ivan Bongiorni
+2020-08-17
+Tools for data processing pipeline. These are more technical functions to be iterated during
+main pipeline run.
 """
-
-import pickle
+import os
 import re
+import time
 import numpy as np
-import numba
 import pandas as pd
+
+from pdb import set_trace as BP
+
+
+def set_gpu_configurations(params):
+    '''
+    Sets GPU configurations, either deactivates it, or allows for GPU memory
+    growth in order to avoid "Failed to get convolution algorithm" error.
+    '''
+    import tensorflow as tf
+
+    print('Setting GPU configurations.')
+    ### Sets GPU configurations
+    if params['use_gpu']:
+        # This prevents CuDNN 'Failed to get convolution algorithm' error
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        if gpus:
+            try:
+                # Currently, memory growth needs to be the same across GPUs
+                for gpu in gpus:
+                    tf.config.experimental.set_memory_growth(gpu, True)
+                    logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+                    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+            except RuntimeError as e:
+                # Memory growth must be set before GPUs have been initialized
+                print(e)
+
+        # To see list of allocated tensors in case of OOM
+        tf.compat.v1.RunOptions(report_tensor_allocations_upon_oom = True)
+
+    else:
+        try:
+            # Disable all GPUs
+            tf.config.set_visible_devices([], 'GPU')
+            visible_devices = tf.config.get_visible_devices()
+            for device in visible_devices:
+                assert device.device_type != 'GPU'
+        except:
+            print('Invalid device or cannot modify virtual devices once initialized.')
+        pass
+    return None
+
+
+def left_zero_fill(x):
+    import numpy as np
+    if np.isfinite(x[0]):
+        return x
+
+    cumsum = np.cumsum(np.isnan(x))
+    x[ :np.argmax(cumsum[:-1] == cumsum[1:]) + 1] = 0
+    return x
 
 
 def process_url(url):
@@ -17,8 +67,8 @@ def process_url(url):
     Extracts four variables from URL string:
         language:  code - with 'na' for 'no language detected'
         website:   what type of website: 'wikipedia', 'wikimedia', 'mediawiki'
-        access:    type of access (e.g.: mobile, desktop, both, ...)
-        agent:     type of agent
+        access:    type of access: 'all-access', 'desktop', 'mobile-web'
+        agent:     type of agent: 'spider', 'all-agents'
     """
     import re
     import numpy as np
@@ -33,60 +83,57 @@ def process_url(url):
     elif '_es.' in url: language = 'es'
     else: language = 'na'
 
-    if 'wikipedia' in url: website = 'wikipedia'
-    elif 'wikimedia' in url: website = 'wikimedia'
-    elif 'mediawiki' in url: website = 'mediawiki'
+    if 'wikipedia' in url: website = 'wikipedia' #-1
+    elif 'wikimedia' in url: website = 'wikimedia' #0
+    elif 'mediawiki' in url: website = 'mediawiki' #1
 
     access, agent = re.split('_', url)[-2:]
 
-    url_features = pd.DataFrame({
-        'language': [language],
-        'website': [website],
-        'access': [access],
-        'agent': [agent]
-    })
+    url_features = {
+        # 'url': url,
+        'language': language,
+        'website': website,
+        'access': access,
+        'agent': agent
+    }
     return url_features
 
 
-@numba.jit(python = True)
-def left_fill_nan(x):
-    """ Fills all left NaN's with zeros, leaving others intact. """
+def get_time_schema(df):
+    """ Returns np.array with patterns for time-related variables (year/week days)
+    in [0,1] range, to be repeated on all trends. """
     import numpy as np
+    import pandas as pd
 
-    if np.isnan(x[0]):
-        cumsum = np.cumsum(np.isnan(x))
-        x[ :np.argmax(cumsum[:-1]==cumsum[1:]) +1] = 0
-    return x
+    daterange = pd.date_range(df.columns[0], df.columns[-1], freq='D').to_series()
+
+    weekdays = daterange.dt.dayofweek
+    weekdays = weekdays.values / weekdays.max()
+    yeardays = daterange.dt.dayofyear
+    yeardays = yeardays.values / yeardays.max()
+
+    # First year won't enter the Train set because of year lag
+    weekdays = weekdays[ 365: ]
+    yeardays = yeardays[ 365: ]
+
+    return weekdays, yeardays
 
 
-@numba.jit(python = True)
-def scale_trends(X, params, language):
+def scale_trends(array, scaling_percentile):
     """
     Takes a linguistic sub-dataframe and applies a robust custom scaling in two steps:
         1. log( x + 1 )
         2. Robust min-max scaling to [ 0, 99th percentile ]
-
-    Returns scaled sub-df and scaling percentile, to be saved later in scaling dict
     """
     import numpy as np
 
-    ### TODO: IMPORTANTE: La scalatura deve avvenire sui dati di Training,
-    #   escludendo quelli di Validation
-
-    # Scaling parameters must be calculated without Validation data
-    cut = int(X.shape[1] * (1 - (params['val_test_size'][0] + params['val_test_size'][1])))
-    percentile_99th = np.percentile(X[ : , :cut ]), 99)
-
-    # log(x+1) and robust scale to [0, 99th percentile]
-    X = np.log(X + 1)
-    X = ( X - np.min(X) ) / ( percentile_99th - np.min(X) )
-
-    return df, percentile_99th
+    array = np.log(array + 1)
+    array = array / scaling_percentile
+    return array
 
 
-@numba.jit(python = True)
 def right_trim_nan(x):
-    """ Trims all NaN's on the right """
+    ''' Trims all NaN's on the right '''
     import numpy as np
 
     if np.isnan(x[-1]):
@@ -96,74 +143,62 @@ def right_trim_nan(x):
         return x
 
 
-@numba.jit(python = True)
-def univariate_processing(variable, window):
+def apply_processing_transformations(trend, vars, weekdays, yeardays):
     '''
-    Process single vars, gets a 'sliding window' 2D array out of a 1D var
-    TO be iterated for each variable in RNN_dataprep().
+    Takes trend and webpage variables and applies pre-processing: left pad and
+    right trim NaN's, filters trends of insufficient length.
+    Finally generates a 2D array to be stored and loaded during training.
     '''
     import numpy as np
-    V = np.empty((len(variable)-window+1, window))  # 2D matrix from variable
-    for i in range(V.shape[0]):
-        V[i,:] = variable[i : i+window]
-    return V.astype(np.float32)
+    import tools  # local import
 
+    trend = tools.left_zero_fill(trend) # Fill left-NaN's with zeros
+    trend = tools.right_trim_nan(trend) # Trim right-NaN's
 
-@numba.jit(python = True)
-def RNN_dataprep(t, page_vars, day_week, day_year, params):
-    # """
-    # Processes a single trend, to be iterated.
-    # From each trend, returns 3D np.array defined by:
-    #     ( no obs. , length input series , no input variables )
-    # Where variables, stored in page object, are:
-    #     - trend
-    #     - quarter (-180) and year (-365) lags
-    #     - one-hot page variables: language, website, access, agent
-    #     - day of the week and day of the year in [0, 1]
-    #
-    # Apply right trim. If the resulting trend is too short, discard the observation.
-    # If it's long enough (len train + len prediction)
-    #
-    # Steps:
-    #     1. From trend, trend vars and page vars, returns 2D np.array with one col
-    #         per variable
-    #     2. Creates empty 3D np.array, and fills it variable by variable by running
-    #         _univariate_processing(). It takes a variable, turns it into a 2D
-    #         matrix, then pastes into the final 3D matrix as a slice
-    # """
-    import numpy as np
+    #Combine trend and all other input vars into a 2D array to be stored on drive. '''
+    trend_lag_year = np.copy(trend[:-365])
+    trend_lag_quarter = np.copy(trend[180:])
+    trend = trend[365:]
+    trend_lag_quarter = trend_lag_quarter[:len(trend)]
 
-    # Cut trend and time lags
-    trend_lag_year = t[ :-365 ]
-    trend_lag_quarter = t[ 180:-180 ]
-    t = t[ 365: ]
-
-    # Add weekday and year day information
-    day_week = day_week[ :len(t) ]
-    day_year = day_year[ :len(t) ]
-
-    # Make a 2D matrix of trend data
-    T = np.column_stack([
-        t,
-        trend_lag_quarter,
-        trend_lag_year,
-        weekdays,
-        yeardays
+    X = np.column_stack([
+        trend,                           # trend
+        trend_lag_quarter,               # trend _ 1 quarter lag
+        trend_lag_year,                  # trend _ 1 year lag
+        np.repeat(vars[0], len(trend)),  # page variable dummies
+        np.repeat(vars[1], len(trend)),
+        np.repeat(vars[2], len(trend)),
+        np.repeat(vars[3], len(trend)),
+        np.repeat(vars[4], len(trend)),
+        np.repeat(vars[5], len(trend)),
+        np.repeat(vars[6], len(trend)),
+        np.repeat(vars[7], len(trend)),
+        np.repeat(vars[8], len(trend)),
+        np.repeat(vars[9], len(trend)),
+        np.repeat(vars[10], len(trend)),
+        np.repeat(vars[11], len(trend)),
+        weekdays[:len(trend)],           # weekday in [0,1]
+        yeardays[:len(trend)]            # day of the year in [0,1]
     ])
 
-    # Attach page variables in the same format
-    page_vars = np.repeat(p, len(t)).reshape((len(page_vars), len(t))).T #make 2D
-    T = np.hstack([ T, page_vars ])
+    X = X.astype(np.float32)
+    return X
 
-    # Apply actual RNN preprocessing
 
-    # X_processed = np.empty((T.shape[0]-params['len_input']+1, params['len_input'], T.shape[1]))
+def RNN_multivariate_processing(array, len_input):
+    '''
+    Takes a 2D array with trend and associated variables, and turns it into a 3D
+    array for RNN with shape:
+        ( no. observations , params['len_input'] , no. input vars )
+    For each variable, iterates _univariate_processing() internal function, that
+    from 1D series creates 2D matrix of sequences defined by params['len_input']
+    '''
+    import numpy as np
 
-    # X_processed = []
-    # for i in range(T.shape[1]):
-    #     X_processed.append( univariate_processing(T[:,i], len_input) )
+    def _univariate_processing(series, len_input):
+        S = [ series[i : i+len_input] for i in range(len(series)-len_input+1) ]
+        return np.stack(S)
 
-    X_processed = [ univariate_processing(T[:,i], len_input) for i in range(T.shape[1]) ]
-    X_processed = np.dstack(X_processed)
-
-    return X_processed
+    array = [ _univariate_processing(array[:,i], len_input) for i in range(array.shape[1]) ]
+    array = np.dstack(array)
+    return array
