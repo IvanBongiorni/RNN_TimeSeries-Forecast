@@ -40,8 +40,8 @@ def processing_main():
     df.dropna(axis=0, inplace=True)
 
     # Check presence of imputed sub-df, in that case subst. else: impute 0 in all NaN's
-    if 'imputed.csv' in os.listdir(os.getcwd()+'data_raw/'):
-        imputed = pd.read_csv(os.getcwd()+'data_raw/imputed.csv')
+    if 'imputed.csv' in os.listdir(os.getcwd()+'/data_raw/'):
+        imputed = pd.read_csv(os.getcwd()+'/data_raw/imputed.csv')
         df = pd.concat([df, imputed], ignore_index=True)
         del imputed # free memory
     else:
@@ -50,7 +50,7 @@ def processing_main():
     print('Extracting URL metadata from dataframe.')
     page_vars = [ tools.process_url(url) for url in df['Page'].tolist() ]
     page_vars = pd.DataFrame(page_vars)
-    df.drop('Page', axis = 1, inplace = True)
+    df.drop('Page', axis=1, inplace=True)
 
     # One-Hot encode, and leave one out to reduce matrix sparsity
     page_vars = pd.get_dummies(page_vars)
@@ -63,20 +63,20 @@ def processing_main():
 
     print('Scaling data.')
     # Find int threeshold between Train lenght and Val+Test in main df
-    val_test_threshold = df.shape[1] - params['len_prediction'] - int( df.shape[1] * params['val_size'] )
+    train_val_threshold = df.shape[1] - params['len_prediction'] - int(df.shape[1] * params['val_size'])
 
     # Then scale only on Train data
     scaling_percentile = np.nanpercentile(df[ : , :train_val_threshold ], 99)
     df = tools.scale_trends(df, scaling_percentile=scaling_percentile)
-
     # Save scaling params to file
     scaling_dict = {'percentile': float(scaling_percentile)}
     yaml.dump(scaling_dict, open( os.getcwd() + '/data_processed/scaling_dict.yaml', 'w'))
 
     print('Start processing observations.')
-    test_split_threshold = df.shape[1] - (params['len_input']+params['len_prediction'])
-
     # Apply sequence of processing transformations and save to folder
+
+    BP()
+
     for i in range(df.shape[0]):
         array = tools.apply_processing_transformations(
             trend = df[i,:],
@@ -86,7 +86,7 @@ def processing_main():
         )
 
         X_train = array[ :params['len_prediction'] , : ]
-        X_test = array[ test_split_threshold: , : ]
+        X_test = array[ -(params['len_input']+params['len_prediction']): , : ]
 
         np.save(os.getcwd() + '/data_processed/Training/X_{}'.format(str(i).zfill(6)), X_train)
         np.save(os.getcwd() + '/data_processed/Test/X_{}'.format(str(i).zfill(6)), X_test)
