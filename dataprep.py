@@ -63,7 +63,7 @@ def processing_main():
 
     print('\tScaling data.')
     # Find int threeshold between Train lenght and Val+Test in main df
-    train_val_threshold = df.shape[1] - params['len_prediction'] - int(df.shape[1] * params['val_size'])
+    train_val_threshold = df.shape[1]-params['len_prediction'] - int((df.shape[1]-params['len_prediction']) * params['val_size'])
 
     # Then scale only on Train data
     scaling_percentile = np.nanpercentile(df[ : , :train_val_threshold ], 99)
