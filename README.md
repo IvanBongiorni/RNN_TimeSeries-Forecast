@@ -17,10 +17,9 @@ Main files:
 - `model.py`: builds model.
 
 Folders:
-- `/data_raw/`: requires unzipped `train_2.csv` file from [Kaggle](https://www.kaggle.com/c/web-traffic-time-series-forecasting/).
+- `/data_raw/`: requires unzipped `train_2.csv` file from [Kaggle](https://www.kaggle.com/c/web-traffic-time-series-forecasting/). Available is an `imputed.csv` dataset, containing imputed time series, coming from my other repository on a [GAN for imputation of missing data in time series](https://github.com/IvanBongiorni/GAN-RNN_Timeseries-imputation).
 - `/data_processed/`: divided in `/Train/` and `/Test/` directories.
-- `/saved_models/`: contains all saved TensorFlow models.
-- `/imputer/`: can contain an imputation model, i.e. a pretrained Neural Network used in data preprocessing stage to impute missing values. The model is coming from my other repository on a [GAN for imputation of missing data in time series](https://github.com/IvanBongiorni/GAN-RNN_Timeseries-imputation).
+- `/saved_models/`: contains all saved TensorFlow models, both regressors
 
 ## How to run code
 After you clone the repository locally, download the raw dataset from [Kaggle](https://www.kaggle.com/c/web-traffic-time-series-forecasting/), and place unzipped `train_2.csv` file in `/data_raw/` folder.
