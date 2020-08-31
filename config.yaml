@@ -5,20 +5,17 @@ imputation_model: 'imputer_00'
 
 # DATA
 val_size: 0.1
-# test_size: 0.1
-placeholder: -0.1
 
 # MODEL
+# # Set model type: 1: 'single step RNN'; 2: 'multi step RNN'; 3: 'seq2seq'
+# model_type: 1
 len_input: 128
-len_prediction: 28
-lstm_size: 200
-conv_filters: [8, 16]
-conv_activation: 'elu'
-use_batchnorm: True
-decoder_hidden_size: 200
+len_prediction: 28  # except for model_type=1
+lstm_size: 64
+dense_size: 20 # only for Seq2seq type
 
 # TRAINING
 learning_rate: 0.0001
 n_epochs: 15
-batch_size: 128
+batch_size: 64
 shuffle: True
