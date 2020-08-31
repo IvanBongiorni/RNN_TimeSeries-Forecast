@@ -32,11 +32,11 @@ def processing_main():
     pipeline_start = time.time()
 
     print('\nStart data processing pipeline.\n')
-    print('Loading data and configuration parameters.')
+    print('\tLoading data and configuration parameters.')
     df = pd.read_csv(os.getcwd() + '/data_raw/train_2.csv')
     params = yaml.load(open(os.getcwd() + '/config.yaml'), yaml.Loader)
 
-    print('Adding imputed trends to dataset.')
+    print('\tAdding imputed trends to dataset.')
     df.dropna(axis=0, inplace=True)
 
     # Check presence of imputed sub-df, in that case subst. else: impute 0 in all NaN's
@@ -47,7 +47,7 @@ def processing_main():
     else:
         df.fillna(0, inplace=True)
 
-    print('Extracting URL metadata from dataframe.')
+    print('\tExtracting URL metadata from dataframe.')
     page_vars = [ tools.process_url(url) for url in df['Page'].tolist() ]
     page_vars = pd.DataFrame(page_vars)
     df.drop('Page', axis=1, inplace=True)
@@ -61,7 +61,7 @@ def processing_main():
     df = df.values
     page_vars = page_vars.values
 
-    print('Scaling data.')
+    print('\tScaling data.')
     # Find int threeshold between Train lenght and Val+Test in main df
     train_val_threshold = df.shape[1] - params['len_prediction'] - int(df.shape[1] * params['val_size'])
 
@@ -72,28 +72,26 @@ def processing_main():
     scaling_dict = {'percentile': float(scaling_percentile)}
     yaml.dump(scaling_dict, open( os.getcwd() + '/data_processed/scaling_dict.yaml', 'w'))
 
-    print('Start processing observations.')
+    print('\tStart processing observations.')
     # Apply sequence of processing transformations and save to folder
-
-    BP()
 
     for i in range(df.shape[0]):
         array = tools.apply_processing_transformations(
             trend = df[i,:],
-            vars = page_vars_train[i,:],
+            vars = page_vars[i,:],
             weekdays = weekdays,
             yeardays = yeardays
         )
 
-        X_train = array[ :params['len_prediction'] , : ]
+        X_train = array[ :-params['len_prediction'] , : ]
         X_test = array[ -(params['len_input']+params['len_prediction']): , : ]
 
-        np.save(os.getcwd() + '/data_processed/Training/X_{}'.format(str(i).zfill(6)), X_train)
+        np.save(os.getcwd() + '/data_processed/Train/X_{}'.format(str(i).zfill(6)), X_train)
         np.save(os.getcwd() + '/data_processed/Test/X_{}'.format(str(i).zfill(6)), X_test)
 
-    print('\tSaved {} Training observations.'.format(X_train.shape[0]))
+    print('\tSaved {} Training observations.'.format(df.shape[0]))
 
-    print('\nPipeline executed in {} ss.\n'.format(round(time.time()-pipeline_start, 2)))
+    print('\n\tPipeline executed in {} ss.\n'.format(round(time.time()-pipeline_start, 2)))
     return None
 
 
