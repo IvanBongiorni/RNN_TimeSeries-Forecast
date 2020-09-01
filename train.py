@@ -31,14 +31,22 @@ def get_processed_batch(batch, params):
     sample = np.random.choice(batch.shape[0], size=np.min([batch.shape[0], params['batch_size']]), replace = False)
     batch = batch[ sample , : , : ]
 
-    y = batch[ : , params['len_input']: , 0 ]  # target trend (just univariate)
+    y = batch[ : , -params['len_prediction']: , 0 ]  # target trend (just univariate)
     x = batch[ : , :params['len_input'] , : ]
+
     return x, y
 
 
 def train(model, params):
     '''
-    ## TODO:  [ doc to be rewritten ]
+    This is pretty straigthforward.
+    Function starts by loading an array of file names from /data_processed/Train/
+    subdir, to index training observations. At each iteration, an observation (still
+    2D arrays) is loaded and processed to 3D array for RNN input. This processed
+    array is sampled to 'batch_size' size. A slice of each batch is taken, either
+    at training and validation steps.
+    An Autograph training function is called later to compute loss and update weights.
+    Every k (100) iterations, performance on Validation data is printed.
     '''
     import os
     import pickle
@@ -58,13 +66,12 @@ def train(model, params):
         return current_loss
 
     # Get list of all Training and Validation observations
-    X_files = os.listdir( os.getcwd() + '/data_processed/Train/' )
-    if 'readme_training.md' in X_files: X_files.remove('readme_training.md')
+    X_files = os.listdir(os.getcwd() + '/data_processed/Train/')
+    if 'readme_train.md' in X_files: X_files.remove('readme_train.md')
     if '.gitignore' in X_files: X_files.remove('.gitignore')
     X_files = np.array(X_files)
 
     for epoch in range(params['n_epochs']):
-
         # Shuffle data by shuffling filename index
         if params['shuffle']:
             X_files = X_files[ np.random.choice(X_files.shape[0], X_files.shape[0], replace=False) ]
@@ -76,8 +83,6 @@ def train(model, params):
             batch = np.load('{}/data_processed/Train/{}'.format(os.getcwd(), X_files[iteration]), allow_pickle=True)
             batch = batch[ :-int(len(batch)*params['val_size']) , : ]
             X_batch, Y_batch = get_processed_batch(batch, params)
-
-            # BP()
 
             # Train model
             train_loss = train_on_batch(X_batch, Y_batch)
