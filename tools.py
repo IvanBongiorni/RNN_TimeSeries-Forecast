@@ -119,17 +119,22 @@ def get_time_schema(df):
     return weekdays, yeardays
 
 
-def scale_trends(array, scaling_percentile):
+def scale_trends(array, threshold):
     """
     Takes a linguistic sub-dataframe and applies a robust custom scaling in two steps:
         1. log( x + 1 )
         2. Robust min-max scaling to [ 0, 99th percentile ]
+    It requires a threshold argument to separate Train data from Validation and Test,
+    the percentile for scaling must be computed only on this subset.
     """
     import numpy as np
 
     array = np.log(array + 1)
+
+    scaling_percentile = np.nanpercentile(array[:, :threshold], 99)
     array = array / scaling_percentile
-    return array
+
+    return array, scaling_percentile
 
 
 def right_trim_nan(x):

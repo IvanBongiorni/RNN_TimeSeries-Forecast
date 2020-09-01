@@ -64,10 +64,10 @@ def processing_main():
     print('\tScaling data.')
     # Find int threeshold between Train lenght and Val+Test in main df
     train_val_threshold = df.shape[1]-params['len_prediction'] - int((df.shape[1]-params['len_prediction']) * params['val_size'])
-
-    # Then scale only on Train data
-    scaling_percentile = np.nanpercentile(df[ : , :train_val_threshold ], 99)
-    df = tools.scale_trends(df, scaling_percentile=scaling_percentile)
+    df = tools.scale_trends(
+        array = df,
+        scaling_percentile = train_val_threshold
+    )
     # Save scaling params to file
     scaling_dict = {'percentile': float(scaling_percentile)}
     yaml.dump(scaling_dict, open( os.getcwd() + '/data_processed/scaling_dict.yaml', 'w'))
