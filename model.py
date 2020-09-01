@@ -12,7 +12,7 @@ def _build_singlestep_RNN(params):
 
     RNN = Sequential([
         LSTM(params['lstm_size'], input_shape=(None, 17)),
-        Dense(params['len_prediction'], activation='relu', kernel_initializer=tf.initializers.zeros)
+        Dense(params['len_prediction'], activation='relu', kernel_initializer=tf.keras.initializers.Zeros())
     ])
     return rnn_regressor
 
@@ -24,7 +24,7 @@ def _build_multistep_RNN(params):
 
     RNN = Sequential([
         LSTM(params['lstm_size'], input_shape=(None, 17)),
-        Dense(params['len_prediction'], activation='relu', kernel_initializer=tf.initializers.zeros)
+        Dense(params['len_prediction'], activation='relu', kernel_initializer=tf.keras.initializers.Zeros())
     ])
     return RNN
 
@@ -37,7 +37,7 @@ def _build_seq2seq_regressor(params):
     RNN = Sequential([
         LSTM(params['len_input'], input_shape=(None, 17), return_sequences=True),
         LSTM(params['len_input'], return_sequences=True),
-        TimeDistributed(Dense(params['dense_size'], activation='relu', kernel_initializer=tf.initializers.zeros))
+        TimeDistributed(Dense(params['dense_size'], activation='relu', kernel_initializer=tf.keras.initializers.Zeros()))
     ])
     return RNN
 
