@@ -16,7 +16,7 @@ dense_size: 20 # only for Seq2seq type
 
 # TRAINING
 learning_rate: 0.0001
-n_epochs: 15
-batch_size: 64
+n_epochs: 1
+batch_size: 128
 shuffle: True
 use_gpu: True
