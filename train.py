@@ -55,12 +55,14 @@ def train(model, params):
     import tensorflow as tf
     import tensorflow.keras.backend as K
 
+    MSE = tf.keras.losses.MeanSquaredError()
     optimizer = tf.keras.optimizers.Adam(learning_rate=params['learning_rate'])
 
     @tf.function
     def train_on_batch(X_batch, Y_batch):
         with tf.GradientTape() as tape:
-            current_loss = tf.reduce_mean(tf.math.abs(model(X_batch) - Y_batch))
+            # current_loss = tf.reduce_mean(tf.math.abs(model(X_batch) - Y_batch))
+            current_loss = MSE(model(X_batch), Y_batch)
         gradients = tape.gradient(current_loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
         return current_loss
@@ -95,7 +97,8 @@ def train(model, params):
                 batch = batch[ :-(int(len(batch)*params['val_size'])+params['len_input']) , : ]
                 X_batch, Y_batch = get_processed_batch(batch, params)
 
-                validation_loss = tf.reduce_mean(tf.math.abs(model(X_batch) - Y_batch))
+                # validation_loss = tf.reduce_mean(tf.math.abs(model(X_batch) - Y_batch))
+                validation_loss = MSE(model(X_batch), Y_batch)
 
                 print('{}.{}   \tTraining Loss: {}   \tValidation Loss: {}   \tTime: {}ss'.format(
                     epoch, iteration, train_loss, validation_loss, round(time.time()-start, 4)))
