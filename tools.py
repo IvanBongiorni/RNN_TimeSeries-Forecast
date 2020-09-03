@@ -207,3 +207,63 @@ def RNN_multivariate_processing(array, len_input):
     array = [ _univariate_processing(array[:,i], len_input) for i in range(array.shape[1]) ]
     array = np.dstack(array)
     return array
+
+
+def get_processed_batch_for_regressor(batch, params):
+    '''
+    This function is called during training.
+
+    Once an observation (time series) has been loaded, processes it for RNN inputs,
+    making it a 3D array with shape:
+        ( n. obs ; input lenght ; n. variables )
+
+    Batch is then cut into input (multivariate) and target (univariate) sets, x and y.
+    Processing batch for regressor generates y with shape: ( batch_size , len_input ).
+    This function is called both for Train and Validation steps.
+    '''
+    import numpy as np
+    import tools  # local import
+
+    batch = tools.RNN_multivariate_processing(
+        array = batch,
+        len_input = params['len_input'] + params['len_prediction'] # Sum them to get X and Y data
+    )
+
+    # Sample a mini-batch from it
+    sample = np.random.choice(batch.shape[0], size=np.min([batch.shape[0], params['batch_size']]), replace = False)
+    batch = batch[ sample , : , : ]
+
+    y = batch[ : , -params['len_prediction']: , 0 ]  # target trend (just univariate)
+    x = batch[ : , :params['len_input'] , : ]
+
+    return x, y
+
+
+def get_processed_batch_for_seq2seq(batch, params):
+    '''
+    This function is called during training.
+
+    Once an observation (time series) has been loaded, processes it for RNN inputs,
+    making it a 3D array with shape:
+        ( n. obs ; input lenght ; n. variables )
+
+    Batch is then cut into input (multivariate) and target (univariate) sets, x and y.
+    Processing batch for seq2seq generates y with shape: ( batch_size , len_input , 1 ).
+    This function is called both for Train and Validation steps.
+    '''
+    import numpy as np
+    import tools  # local import
+
+    batch = tools.RNN_multivariate_processing(
+        array = batch,
+        len_input = params['len_input'] + params['len_prediction'] # Sum them to get X and Y data
+    )
+
+    # Sample a mini-batch from it
+    sample = np.random.choice(batch.shape[0], size=np.min([batch.shape[0], params['batch_size']]), replace = False)
+    batch = batch[ sample , : , : ]
+
+    x = batch[ : , :params['len_input'] , : ]
+    y = batch[ : , params['len_prediction']:params['len_input']+params['len_prediction'] , 0:1 ]
+
+    return x, y
