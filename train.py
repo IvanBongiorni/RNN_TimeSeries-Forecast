@@ -10,33 +10,6 @@ from pdb import set_trace as BP
 import tools, model
 
 
-def get_processed_batch(batch, params):
-    '''
-    Once an observation (time series) has been loaded, processes it for RNN inputs,
-    making it a 3D array with shape:
-        ( n. obs ; input lenght ; n. variables )
-
-    Batch is then cut into input (multivariate) and target (univariate) sets, x and y.
-    This function is called both for Train and Validation steps.
-    '''
-    import numpy as np
-    import tools  # local import
-
-    batch = tools.RNN_multivariate_processing(
-        array = batch,
-        len_input = params['len_input'] + params['len_prediction'] # Sum them to get X and Y data
-    )
-
-    # Sample a mini-batch from it
-    sample = np.random.choice(batch.shape[0], size=np.min([batch.shape[0], params['batch_size']]), replace = False)
-    batch = batch[ sample , : , : ]
-
-    y = batch[ : , -params['len_prediction']: , 0 ]  # target trend (just univariate)
-    x = batch[ : , :params['len_input'] , : ]
-
-    return x, y
-
-
 def train(model, params):
     '''
     This is pretty straigthforward.
@@ -54,6 +27,15 @@ def train(model, params):
     import numpy as np
     import tensorflow as tf
     import tensorflow.keras.backend as K
+
+    # Depending on 'model_type' selected, loads a different batch processing fn
+    # Checks of model_type correctness already happened in model.py
+    if params['model_type'] == 1:
+        from tools import get_processed_batch_for_regressor as get_processed_batch
+    if params['model_type'] == 2:
+        from tools import get_processed_batch_for_seq2seq as get_processed_batch
+        print('prova1')
+    print('prova2')
 
     MSE = tf.keras.losses.MeanSquaredError()
     optimizer = tf.keras.optimizers.Adam(learning_rate=params['learning_rate'])
@@ -140,9 +122,7 @@ def main():
     regressor.summary()
 
     print('\nStart training.\n')
-    # Create/load model and train
     train(regressor, params)
-
 
     return None
 
