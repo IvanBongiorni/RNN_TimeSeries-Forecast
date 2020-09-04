@@ -10,6 +10,14 @@ from pdb import set_trace as BP
 import tools, model
 
 
+def smape(A, F):
+    '''
+    SMAPE (Symmetric Mean Absolute Percentage Error) is the error metric used in
+    the official Kaggle competition. I will use it on Validation data.
+    '''
+    return 100/len(A) * np.sum(2 * np.abs(F - A) / (np.abs(A) + np.abs(F)))
+
+
 def train(model, params):
     '''
     This is pretty straigthforward.
@@ -80,10 +88,14 @@ def train(model, params):
                 X_batch, Y_batch = get_processed_batch(batch, params)
 
                 # validation_loss = tf.reduce_mean(tf.math.abs(model(X_batch) - Y_batch))
-                validation_loss = MSE(model(X_batch), Y_batch)
+                validation_loss_mse = MSE(model(X_batch), Y_batch)
+                validation_loss_smape = smape(model.predict(X_batch), Y_batch)
 
-                print('{}.{}   \tTraining Loss: {}   \tValidation Loss: {}   \tTime: {}ss'.format(
-                    epoch, iteration, train_loss, validation_loss, round(time.time()-start, 4)))
+                print('{}.{}   \tTraining Loss: {}   \tValidation Loss (MSE): {}   \tValidation Loss (SMAPE): {}   \tTime: {}ss'.format(
+                    epoch, iteration,
+                    train_loss, validation_loss_mse, validation_loss_smape,
+                    round(time.time()-start, 4))
+                )
 
     print('\nTraining complete.\n')
 
