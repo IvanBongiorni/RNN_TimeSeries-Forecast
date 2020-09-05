@@ -4,18 +4,25 @@ Author: Ivan Bongiorni,     https://github.com/IvanBongiorni
 
 Calls training functions
 """
+import numpy as np
 import tensorflow as tf
+
 from pdb import set_trace as BP
+
 # local imports
 import tools, model
 
 
-def smape(A, F):
+def SMAPE(y_true, y_pred):
     '''
     SMAPE (Symmetric Mean Absolute Percentage Error) is the error metric used in
     the official Kaggle competition. I will use it on Validation data.
+    [ modified from: 'https://www.kaggle.com/cpmpml/smape-weirdness' ]
     '''
-    return 100/len(A) * np.sum(2 * np.abs(F - A) / (np.abs(A) + np.abs(F)))
+    import numpy as np
+    denominator = (np.abs(y_true) + np.abs(y_pred)) / 200.0
+    diff = np.abs(y_true - y_pred) / denominator
+    return np.mean(diff)
 
 
 def train(model, params):
@@ -42,8 +49,6 @@ def train(model, params):
         from tools import get_processed_batch_for_regressor as get_processed_batch
     if params['model_type'] == 2:
         from tools import get_processed_batch_for_seq2seq as get_processed_batch
-        print('prova1')
-    print('prova2')
 
     MSE = tf.keras.losses.MeanSquaredError()
     optimizer = tf.keras.optimizers.Adam(learning_rate=params['learning_rate'])
@@ -83,13 +88,13 @@ def train(model, params):
             if iteration % 100 == 0:
                 # Repeat loading but keep Validation data this time
                 batch = np.load('{}/data_processed/Train/{}'.format(os.getcwd(), X_files[iteration]), allow_pickle=True)
-                # batch = batch[ : , :-(params['len_input']+params['len_prediction']) , : ]
+                # takes the last (validation) piece
                 batch = batch[ :-(int(len(batch)*params['val_size'])+params['len_input']) , : ]
                 X_batch, Y_batch = get_processed_batch(batch, params)
 
                 # validation_loss = tf.reduce_mean(tf.math.abs(model(X_batch) - Y_batch))
                 validation_loss_mse = MSE(model(X_batch), Y_batch)
-                validation_loss_smape = smape(model.predict(X_batch), Y_batch)
+                validation_loss_smape = SMAPE(model.predict(X_batch), Y_batch)
 
                 print('{}.{}   \tTraining Loss: {}   \tValidation Loss (MSE): {}   \tValidation Loss (SMAPE): {}   \tTime: {}ss'.format(
                     epoch, iteration,
@@ -119,22 +124,20 @@ def main():
     print('\n\tLoading configuration parameters.')
     params = yaml.load(open(os.getcwd() + '/config.yaml'), yaml.Loader)
 
-    if params['use_gpu']:
-        print('\tSetting GPU configurations.')
-        tools.set_gpu_configurations(params)
+    tools.set_gpu_configurations(params)
 
     # Check if pretrained model with 'model_name' exists, otherwise create a new one
     if params['model_name']+'.h5' in os.listdir(os.getcwd()+'/saved_models/'):
         print('Loading existing model: {}.'.format(params['model_name']))
-        regressor = tf.keras.models.load_model(os.getcwd() + '/saved_models/' + params['model_name'] + '.h5')
+        ANN = tf.keras.models.load_model(os.getcwd() + '/saved_models/' + params['model_name'] + '.h5')
     else:
         print('\nNew model created as: {}\n'.format(params['model_name']))
-        regressor = model.build(params)
+        ANN = model.build(params)
 
-    regressor.summary()
+    ANN.summary()
 
     print('\nStart training.\n')
-    train(regressor, params)
+    train(ANN, params)
 
     return None
 
