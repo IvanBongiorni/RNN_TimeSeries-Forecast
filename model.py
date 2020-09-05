@@ -33,7 +33,7 @@ def _build_seq2seq_regressor(params):
 
 def build(params):
     """
-    [ Doc to be rewritten ]
+    Calls different models, depending on 'model_type' from config file.
     """
     if params['model_type'] == 1:
         model = _build_multistep_RNN(params)
