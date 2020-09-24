@@ -13,42 +13,74 @@ import pandas as pd
 from pdb import set_trace as BP
 
 
+# def get_gpu_memory():
+#     '''
+#     This is just a util function to get the amount of available GPU memory.
+#     It works only with `nvidia-smi` shell command. I need it to let users determine
+#     a share [0,1] of GPU memory usage.
+#     source:
+#     '''
+#     import subprocess as sp
+#     import os
+#     _output_to_list = lambda x: x.decode('ascii').split('\n')[:-1]
+#
+#     COMMAND = "nvidia-smi --query-gpu=memory.free --format=csv"
+#     memory_free_info = _output_to_list(sp.check_output(COMMAND.split()))[1:]
+#     memory_free_values = [int(x.split()[0]) for i, x in enumerate(memory_free_info)]
+#     return memory_free_values[0]
+
+
 def set_gpu_configurations(params):
     '''
-    Sets GPU configurations, either deactivates it, or allows for GPU memory
-    growth in order to avoid "Failed to get convolution algorithm" error.
+    GPU settings, there are 3 available options that can be change from 'use_gpu'
+    params in config.yaml:
+    1. Set an amount of usable GPU memory, manually (e.g. use_gpu: 1024*6) as int value
+    2. Allow GPU memory growth indefinitely (use_gpu: True)
+    3. Do not use GPU (use_gpu: False)
     '''
     import tensorflow as tf
 
     print('Setting GPU configurations.')
-    ### Sets GPU configurations
-    if params['use_gpu']:
-        # This prevents CuDNN 'Failed to get convolution algorithm' error
+
+    # If it's numeric (i.e. a threshold is specified)
+    if isinstance(params['use_gpu'], int):
+        # Put a threshold to GPU memory usage
         gpus = tf.config.experimental.list_physical_devices('GPU')
         if gpus:
             try:
-                # Currently, memory growth needs to be the same across GPUs
-                for gpu in gpus:
-                    tf.config.experimental.set_memory_growth(gpu, True)
-                    logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-                    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+                tf.config.experimental.set_virtual_device_configuration(gpus[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=params['use_gpu'])])
             except RuntimeError as e:
-                # Memory growth must be set before GPUs have been initialized
                 print(e)
 
-        # To see list of allocated tensors in case of OOM
-        tf.compat.v1.RunOptions(report_tensor_allocations_upon_oom = True)
+    # Otherwise, if it's just a Y/N to GPU use
+    elif isinstance(params['use_gpu'], bool):
+        if params['use_gpu']:
+            # This prevents CuDNN 'Failed to get convolution algorithm' error
+            gpus = tf.config.experimental.list_physical_devices('GPU')
+            if gpus:
+                try:
+                    # Currently, memory growth needs to be the same across GPUs
+                    for gpu in gpus:
+                        tf.config.experimental.set_memory_growth(gpu, True)
+                        logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+                        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+                except RuntimeError as e:
+                    # Memory growth must be set before GPUs have been initialized
+                    print(e)
 
-    else:
-        try:
-            # Disable all GPUs
-            tf.config.set_visible_devices([], 'GPU')
-            visible_devices = tf.config.get_visible_devices()
-            for device in visible_devices:
-                assert device.device_type != 'GPU'
-        except:
-            print('Invalid device or cannot modify virtual devices once initialized.')
-        pass
+            # To see list of allocated tensors in case of OOM
+            tf.compat.v1.RunOptions(report_tensor_allocations_upon_oom = True)
+
+        else:
+            try:
+                # Disable all GPUs
+                tf.config.set_visible_devices([], 'GPU')
+                visible_devices = tf.config.get_visible_devices()
+                for device in visible_devices:
+                    assert device.device_type != 'GPU'
+            except:
+                print('Invalid device or cannot modify virtual devices once initialized.')
+            pass
     return None
 
 
