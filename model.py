@@ -26,14 +26,21 @@ def _build_seq2seq_regressor(params):
     RNN = Sequential([
         LSTM(params['len_input'], input_shape=(None, 17), return_sequences=True),
         LSTM(params['len_input'], return_sequences=True),
-        TimeDistributed(Dense(params['dense_size'], activation='relu'))
+        TimeDistributed(Dense(1, activation='relu'))
     ])
     return RNN
 
 
 def build(params):
     """
-    [ Doc to be rewritten ]
+    Calls different models, depending on 'model_type' from config file.
     """
-    model = _build_multistep_RNN(params)
+    if params['model_type'] == 1:
+        model = _build_multistep_RNN(params)
+    elif params['model_type'] == 2:
+        model = _build_seq2seq_regressor(params)
+    else:
+        print('\nERROR: the model type specified in config.yaml is not valid.')
+        print("Set:\n'model_type' = 1: plain multistep regressor\n'model_type' = 2: seq2seq regressor")
+        quit()
     return model

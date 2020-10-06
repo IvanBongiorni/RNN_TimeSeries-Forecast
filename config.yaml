@@ -1,22 +1,20 @@
 # Configuration file
 seed: 173
-model_name: 'model_00'
-imputation_model: 'imputer_00'
+model_name: 'seq2seq_00'
 
 # DATA
 val_size: 0.1
 
 # MODEL
-# # Set model type: 1: 'single step RNN'; 2: 'multi step RNN'; 3: 'seq2seq'
-# model_type: 1
+# # Set model type: 1: 'multi step RNN'; 2: 'seq2seq'
+model_type: 2
 len_input: 128
-len_prediction: 28  # except for model_type=1
+len_prediction: 28
 lstm_size: 64
-dense_size: 20 # only for Seq2seq type
 
 # TRAINING
 learning_rate: 0.0001
 n_epochs: 1
-batch_size: 128
+batch_size: 64
 shuffle: True
-use_gpu: True
+use_gpu: 5632 #True
