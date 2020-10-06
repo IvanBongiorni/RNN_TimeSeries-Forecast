@@ -1,12 +1,11 @@
-# WORK IN PROGRESS
-
 # Recurrent Neural Network for Time Series Forecasting
 
-## Description
-The model is a Recurrent Neural Network for time series forecast. It is implemented in **TensorFlow 2** and trained on the Wikipedia [Web Traffic Time Series Forecasting](https://www.kaggle.com/c/web-traffic-time-series-forecasting) dataset from Kaggle.
+This is a time series forecasting project based on the Wikipedia [Web Traffic Time Series Forecasting](https://www.kaggle.com/c/web-traffic-time-series-forecasting) dataset from Kaggle. 
+Two **RNN architectures** are implemented:
+- A "Vanilla" RNN regressor.
+- A Seq2seq regressor.
 
-## Model Structure
-For a detailed explanation of its implementation, see [how_it_works.md]() file.
+Both are implemented in **TensorFlow 2**, with *custom training functions* optimized with **Autograph**.
 
 ## Structure of the repository
 Main files:
@@ -27,7 +26,7 @@ Then, time series forecast is executed in two steps. First, run data preprocessi
 
 `python -m dataprep`
 
-This will generate Trainging+Validation and Test files, stored in `/data_processed/` subdirectories. Second, launch training pipeline with:
+This will generate Training+Validation and Test files, stored in `/data_processed/` subdirectories. Second, launch training pipeline with:
 
 `python -m train`
 
