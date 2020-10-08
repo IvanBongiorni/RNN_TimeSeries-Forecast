@@ -1,13 +1,14 @@
 # Configuration file
 seed: 173
-model_name: 'seq2seq_00'
+model_name: 'regressor_00'
 
 # DATA
 val_size: 0.1
 
 # MODEL
-# # Set model type: 1: 'multi step RNN'; 2: 'seq2seq'
-model_type: 2
+# Set model type: 1: 'multi step RNN'; 
+#                 2: 'seq2seq'
+model_type: 1
 len_input: 128
 len_prediction: 28
 lstm_size: 64

@@ -20,8 +20,11 @@ def SMAPE(y_true, y_pred):
     [ modified from: 'https://www.kaggle.com/cpmpml/smape-weirdness' ]
     '''
     import numpy as np
+
     denominator = (np.abs(y_true) + np.abs(y_pred)) / 200.0
     diff = np.abs(y_true - y_pred) / denominator
+    diff[denominator == 0] = 0.0
+
     return np.mean(diff)
 
 
@@ -73,34 +76,50 @@ def train(model, params):
         if params['shuffle']:
             X_files = X_files[ np.random.choice(X_files.shape[0], X_files.shape[0], replace=False) ]
 
-        for iteration in range(X_files.shape[0]):
-            start = time.time()
+        for iteration in range(X_files.shape[0] // params['batch_size']):
 
-            # Load raw series, keep Train data, get input and target batch
-            batch = np.load('{}/data_processed/Train/{}'.format(os.getcwd(), X_files[iteration]), allow_pickle=True)
-            batch = batch[ :-int(len(batch)*params['val_size']) , : ]
-            X_batch, Y_batch = get_processed_batch(batch, params)
+            # Take batch of filenames and load list of np.arrays
+            start = iteration * params['batch_size']
+            batch = [ np.load('{}/data_processed/Train/{}'.format(os.getcwd(), filename), allow_pickle=True) for filename in X_files[start:start+params['batch_size']] ]
+
+            # keep Train data - discard Validation for other tests
+            batch = [ array[ :-int(len(array)*params['val_size']) , : ] for array in batch ]
+
+            # Process each file and return list [x,y]
+            batch = [ get_processed_batch(array, params) for array in batch ]
+
+            # Extract X and Y and stack them in the final batches
+            X_batch = [array[0] for array in batch]
+            Y_batch = [array[1] for array in batch]
+            X_batch = np.concatenate(X_batch)
+            Y_batch = np.concatenate(Y_batch)
 
             # Train model
             train_loss = train_on_batch(X_batch, Y_batch)
 
             # Once in a while check and print progress on Validation data
-            if iteration % 100 == 0:
+            if iteration % 50 == 0:
+
+                train_loss_smape = SMAPE(model.predict(X_batch), Y_batch)
+
                 # Repeat loading but keep Validation data this time
-                batch = np.load('{}/data_processed/Train/{}'.format(os.getcwd(), X_files[iteration]), allow_pickle=True)
-                # takes the last (validation) piece
-                batch = batch[ :-(int(len(batch)*params['val_size'])+params['len_input']) , : ]
-                X_batch, Y_batch = get_processed_batch(batch, params)
+                batch = [ np.load('{}/data_processed/Train/{}'.format(os.getcwd(), filename), allow_pickle=True) for filename in X_files[start:start+params['batch_size']] ]
+                batch = [ array[ :-(int(len(array)*params['val_size'])+params['len_input']) , : ] for array in batch ]
+
+                batch = [ get_processed_batch(array, params) for array in batch ]
+                X_batch = [array[0] for array in batch]
+                Y_batch = [array[1] for array in batch]
+                X_batch = np.concatenate(X_batch)
+                Y_batch = np.concatenate(Y_batch)
 
                 # validation_loss = tf.reduce_mean(tf.math.abs(model(X_batch) - Y_batch))
                 validation_loss_mse = MSE(model(X_batch), Y_batch)
                 validation_loss_smape = SMAPE(model.predict(X_batch), Y_batch)
 
-                print('{}.{}   \tTraining Loss: {}   \tValidation Loss (MSE): {}   \tValidation Loss (SMAPE): {}   \tTime: {}ss'.format(
-                    epoch, iteration,
-                    train_loss, validation_loss_mse, validation_loss_smape,
-                    round(time.time()-start, 4))
-                )
+                print('{}.{} \tTraining Loss (MSE):   {}    \tTraining Loss (SMAPE):   {}'.format(
+                    epoch, iteration, train_loss, train_loss_smape))
+                print('\tValidation Loss (MSE): {}   \tValidation Loss (SMAPE): {}\n'.format(
+                    validation_loss_mse, validation_loss_smape))
 
     print('\nTraining complete.\n')
 
