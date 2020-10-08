@@ -254,21 +254,25 @@ def get_processed_batch_for_regressor(batch, params):
     This function is called both for Train and Validation steps.
     '''
     import numpy as np
-    import tools  # local import
 
-    batch = tools.RNN_multivariate_processing(
+    batch = RNN_multivariate_processing(
         array = batch,
         len_input = params['len_input'] + params['len_prediction'] # Sum them to get X and Y data
     )
 
-    # Sample a mini-batch from it
-    sample = np.random.choice(batch.shape[0], size=np.min([batch.shape[0], params['batch_size']]), replace = False)
-    batch = batch[ sample , : , : ]
+    # For each trend, sample 1 obs.
+    batch = batch[ np.random.choice(batch.shape[0]) , : , : ]
 
-    y = batch[ : , -params['len_prediction']: , 0 ]  # target trend (just univariate)
-    x = batch[ : , :params['len_input'] , : ]
+    # Cut input and target out of data batch
+    y = batch[ -params['len_prediction']: , 0 ]  # target trend (univariate)
+    x = batch[ :-params['len_prediction'] , : ]
 
-    return x, y
+    # Fix shape
+    x = np.expand_dims(x, axis=0)
+    y = np.expand_dims(y, axis=0)
+
+    # Returning a list to allow for list comprehension in train()
+    return [x, y]
 
 
 def get_processed_batch_for_seq2seq(batch, params):
@@ -284,18 +288,22 @@ def get_processed_batch_for_seq2seq(batch, params):
     This function is called both for Train and Validation steps.
     '''
     import numpy as np
-    import tools  # local import
 
-    batch = tools.RNN_multivariate_processing(
+    batch = RNN_multivariate_processing(
         array = batch,
         len_input = params['len_input'] + params['len_prediction'] # Sum them to get X and Y data
     )
 
-    # Sample a mini-batch from it
-    sample = np.random.choice(batch.shape[0], size=np.min([batch.shape[0], params['batch_size']]), replace = False)
-    batch = batch[ sample , : , : ]
+    # For each trend, sample 1 obs.
+    batch = batch[ np.random.choice(batch.shape[0]) , : , : ]
 
-    x = batch[ : , :params['len_input'] , : ]
-    y = batch[ : , params['len_prediction']:params['len_input']+params['len_prediction'] , 0:1 ]
+    # Cut input and target out of data batch
+    y = batch[ params['len_prediction']: , 0:1 ]  # target trend (univariate)
+    x = batch[ :-params['len_prediction'] , : ]
 
-    return x, y
+    # Fix shape
+    x = np.expand_dims(x, axis=0)
+    y = np.expand_dims(y, axis=0)
+
+    # Returning a list to allow for list comprehension in train()
+    return [x, y]
