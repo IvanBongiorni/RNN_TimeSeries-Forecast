@@ -1,6 +1,6 @@
 # Recurrent Neural Network for Time Series Forecasting
 
-<a href="url" align="center"><img src="https://github.com/IvanBongiorni/RNN_TimeSeries-Forecast/blob/master/utils/banner_00.png" align="center" height="204" width="800" ></a>
+<a href="url" align="center"><img src="https://github.com/IvanBongiorni/RNN_TimeSeries-Forecast/blob/master/utils/banner_00.png" align="center" height="304" width="800" ></a>
 
 ---
 
