@@ -15,10 +15,13 @@ Main files:
 - `tools.py`: contains useful processing functions to be iterated in main pipelines.
 - `model.py`: builds model.
 
+I also added a `visualize_performance.ipynb` Jupyter Notebook to visually inspect models' performance on Test data.
+
 Folders:
 - `/data_raw/`: requires unzipped `train_2.csv` file from [Kaggle](https://www.kaggle.com/c/web-traffic-time-series-forecasting/). Available is an `imputed.csv` dataset, containing imputed time series, coming from my other repository on a [GAN for imputation of missing data in time series](https://github.com/IvanBongiorni/GAN-RNN_Timeseries-imputation).
 - `/data_processed/`: divided in `/Train/` and `/Test/` directories.
-- `/saved_models/`: contains all saved TensorFlow models, both regressors
+- `/saved_models/`: contains all saved TensorFlow models, both regressors.
+- `/utils/`: for pics and other secondary files.
 
 ## How to run code
 After you clone the repository locally, download the raw dataset from [Kaggle](https://www.kaggle.com/c/web-traffic-time-series-forecasting/), and place unzipped `train_2.csv` file in `/data_raw/` folder.
@@ -42,6 +45,7 @@ pandas==1.0.3
 scikit-learn==0.22.2.post1
 scipy==1.4.1
 tensorflow==2.1.0
+tqdm==4.45.0
 ```
 
 ## Hardware
