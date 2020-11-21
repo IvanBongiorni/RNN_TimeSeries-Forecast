@@ -1,5 +1,9 @@
 # Recurrent Neural Network for Time Series Forecasting
 
+<a href="url" align="center"><img src="https://github.com/IvanBongiorni/RNN_TimeSeries-Forecast/blob/master/utils/banner_00.png" align="center" height="204" width="800" ></a>
+
+---
+
 This is a time series forecasting project based on the Wikipedia [Web Traffic Time Series Forecasting](https://www.kaggle.com/c/web-traffic-time-series-forecasting) dataset from Kaggle. 
 Two **RNN architectures** are implemented:
 - A "Vanilla" RNN regressor.
